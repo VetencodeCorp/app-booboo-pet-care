@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/whatsapp_launcher.dart';
 import '../../auth/application/auth_controller.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -130,10 +131,11 @@ class ProfilePage extends ConsumerWidget {
                       onTap: () => context.push('/profile/password'),
                     ),
                     const Divider(height: 0),
-                    const ListTile(
-                      leading: Icon(Icons.support_agent),
-                      title: Text('Bantuan WhatsApp'),
-                      trailing: Icon(Icons.chevron_right),
+                    ListTile(
+                      leading: const Icon(Icons.support_agent),
+                      title: const Text('Bantuan WhatsApp'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _openWhatsapp(context),
                     ),
                     const Divider(height: 0),
                     const ListTile(
@@ -162,6 +164,18 @@ class ProfilePage extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _openWhatsapp(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final opened = await openBoobooWhatsapp(
+      'Halo Booboo Pet Care, saya butuh bantuan untuk aplikasi member.',
+    );
+    if (!opened) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('WhatsApp tidak bisa dibuka')),
+      );
+    }
   }
 }
 

@@ -32,6 +32,11 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.gradle-cache/
+.tmp/
+flutter_tmp/
+gradle_cache/
+*.tmp
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +48,4 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/

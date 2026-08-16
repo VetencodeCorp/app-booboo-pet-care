@@ -6,11 +6,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../application/auth_controller.dart';
 import '../data/auth_repository.dart';
+import 'setup_password_page.dart';
+
+enum OtpFlow { login, activation, forgot }
 
 class OtpPageArgs {
-  const OtpPageArgs(this.result);
+  const OtpPageArgs(this.result, {this.flow = OtpFlow.login});
 
   final LoginOtpResult result;
+  final OtpFlow flow;
 }
 
 class OtpPage extends ConsumerStatefulWidget {
@@ -39,10 +43,31 @@ class _OtpPageState extends ConsumerState<OtpPage> {
       _error = null;
     });
     try {
-      await ref
+      final result = await ref
           .read(authControllerProvider.notifier)
           .verifyOtp(widget.args.result.otpToken, _otp.text.trim());
       if (!mounted) return;
+
+      if (widget.args.flow == OtpFlow.forgot) {
+        context.go(
+          '/setup-password',
+          extra: const SetupPasswordPageArgs(
+            title: 'Password Baru',
+            subtitle:
+                'Buat password baru untuk akun member. Password ini dipakai saat login berikutnya.',
+            showSkip: false,
+          ),
+        );
+        return;
+      }
+
+      if (widget.args.flow == OtpFlow.activation) {
+        await _showWelcomeDialog(result.member.fullname);
+        if (!mounted) return;
+        context.go('/pets');
+        return;
+      }
+
       context.go('/pets');
     } on DioException catch (e) {
       setState(
@@ -53,6 +78,49 @@ class _OtpPageState extends ConsumerState<OtpPage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _showWelcomeDialog(String name) {
+    final displayName = name.trim().isEmpty ? 'Member Booboo' : name.trim();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.7, end: 1),
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutBack,
+              builder: (context, value, child) =>
+                  Transform.scale(scale: value, child: child),
+              child: const CircleAvatar(
+                radius: 30,
+                backgroundColor: AppColors.softPurple,
+                child: Icon(
+                  Icons.verified_rounded,
+                  color: AppColors.primary,
+                  size: 34,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text('Selamat datang'),
+          ],
+        ),
+        content: Text(
+          'Halo $displayName, akun member kamu berhasil diaktifkan. Sekarang kamu bisa melihat data anabul dan riwayat perawatan.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Mulai'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -78,7 +146,10 @@ class _OtpPageState extends ConsumerState<OtpPage> {
             ),
             if (debugOtp != null) ...[
               const SizedBox(height: 12),
-              Chip(label: Text('Dev OTP: $debugOtp')),
+              Chip(
+                avatar: const Icon(Icons.code_rounded, size: 18),
+                label: Text('Dev OTP: $debugOtp'),
+              ),
             ],
             const SizedBox(height: 28),
             if (_error != null) ...[

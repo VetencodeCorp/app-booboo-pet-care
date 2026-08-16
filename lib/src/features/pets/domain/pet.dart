@@ -1,3 +1,5 @@
+import '../../../core/utils/image_url_normalizer.dart';
+
 class Pet {
   const Pet({
     required this.id,
@@ -31,7 +33,7 @@ class Pet {
       jenisHewan: json['jenis_hewan']?.toString() ?? '',
       genderCode: json['gender_code']?.toString() ?? '',
       gender: json['gender']?.toString() ?? '',
-      image: json['image']?.toString() ?? '',
+      image: normalizePatientImageUrl(json['image']?.toString()),
       ownerName: json['owner_name']?.toString(),
       totalRiwayat: (json['total_riwayat'] as num?)?.toInt(),
       kunjunganTerakhir: json['kunjungan_terakhir']?.toString(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
@@ -11,11 +12,14 @@ class AppTheme {
       surface: AppColors.surface,
     );
 
+    final textTheme = GoogleFonts.poppinsTextTheme();
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: 'Plus Jakarta Sans',
+      textTheme: textTheme,
+      primaryTextTheme: GoogleFonts.poppinsTextTheme(),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         backgroundColor: AppColors.background,
@@ -54,7 +58,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w700),
         ),
       ),
     );

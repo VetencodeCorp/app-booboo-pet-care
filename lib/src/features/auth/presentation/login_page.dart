@@ -139,7 +139,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: () {},
+                onPressed: () => context.push('/forgot-password'),
                 child: const Text('Lupa password?'),
               ),
             ),
@@ -153,7 +153,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     )
                   : const Text('Masuk'),
             ),
-            const SizedBox(height: 220),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: _loading
+                  ? null
+                  : () => context.push('/activate-member'),
+              icon: const Icon(Icons.verified_user_outlined),
+              label: const Text('Aktivasi member lama'),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Belum punya password? Pakai aktivasi member lama untuk masuk lewat OTP.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 160),
             const Divider(),
             const SizedBox(height: 12),
             const Row(

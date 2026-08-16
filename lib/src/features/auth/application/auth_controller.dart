@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/auth_repository.dart';
 import '../domain/member.dart';
+import '../../pets/data/pets_repository.dart';
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, Member?>(
   AuthController.new,
@@ -17,11 +18,34 @@ class AuthController extends AsyncNotifier<Member?> {
     return ref.read(authRepositoryProvider).login(phone, password);
   }
 
-  Future<void> verifyOtp(String token, String code) async {
+  Future<LoginOtpResult> activateMember(String phone) {
+    return ref.read(authRepositoryProvider).activateMember(phone);
+  }
+
+  Future<LoginOtpResult> forgotPassword(String phone) {
+    return ref.read(authRepositoryProvider).forgotPassword(phone);
+  }
+
+  Future<VerifyOtpResult> verifyOtp(String token, String code) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => ref.read(authRepositoryProvider).verifyOtp(token, code),
-    );
+    final result = await ref
+        .read(authRepositoryProvider)
+        .verifyOtp(token, code);
+    state = AsyncData(result.member);
+    _resetPetCaches();
+    return result;
+  }
+
+  Future<void> setupPassword({
+    required String newPassword,
+    required String confirmation,
+  }) async {
+    await ref
+        .read(authRepositoryProvider)
+        .setupPassword(newPassword: newPassword, confirmation: confirmation);
+    final member = await ref.read(authRepositoryProvider).me();
+    state = AsyncData(member);
+    _resetPetCaches();
   }
 
   Future<void> updateProfile({
@@ -50,6 +74,18 @@ class AuthController extends AsyncNotifier<Member?> {
 
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
+    _resetPetCaches();
     state = const AsyncData(null);
+  }
+
+  void _resetPetCaches() {
+    ref.invalidate(petsProvider);
+    ref.invalidate(pagedPetsProvider);
+    ref.invalidate(petOptionsProvider);
+    ref.invalidate(allHistoriesProvider);
+    ref.invalidate(pagedHistoriesProvider);
+    ref.invalidate(petProvider);
+    ref.invalidate(petHistoriesProvider);
+    ref.invalidate(historyDetailProvider);
   }
 }

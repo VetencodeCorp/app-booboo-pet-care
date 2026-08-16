@@ -10,17 +10,27 @@ import '../../../shared/widgets/empty_state.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../auth/application/auth_controller.dart';
 import '../data/pets_repository.dart';
+import '../domain/pet.dart';
 
-class PetsPage extends ConsumerStatefulWidget {
-  const PetsPage({super.key});
+class HistoriesPage extends ConsumerStatefulWidget {
+  const HistoriesPage({super.key});
 
   @override
-  ConsumerState<PetsPage> createState() => _PetsPageState();
+  ConsumerState<HistoriesPage> createState() => _HistoriesPageState();
 }
 
-class _PetsPageState extends ConsumerState<PetsPage> {
+class _HistoriesPageState extends ConsumerState<HistoriesPage> {
+  final _searchController = TextEditingController();
   String _query = '';
   int _page = 1;
+  int? _petId;
+  DateTimeRange? _dateRange;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,75 +40,109 @@ class _PetsPageState extends ConsumerState<PetsPage> {
     }
     if (auth.asData?.value == null) {
       return const SafeArea(
-        child: EmptyState(
-          title: 'Perlu masuk',
-          message: 'Masuk untuk melihat data anabul dan riwayat perawatan.',
-          icon: Icons.lock_outline,
+        child: Center(
+          child: EmptyState(
+            title: 'Perlu masuk',
+            message: 'Masuk untuk melihat semua riwayat perawatan.',
+            icon: Icons.lock_outline,
+          ),
         ),
       );
     }
 
-    final listQuery = PetListQuery(page: _page, search: _query);
-    final petsAsync = ref.watch(pagedPetsProvider(listQuery));
+    final listQuery = HistoryListQuery(
+      page: _page,
+      search: _query,
+      petId: _petId,
+      dateFrom: _dateRange?.start,
+      dateTo: _dateRange?.end,
+    );
+    final historiesAsync = ref.watch(pagedHistoriesProvider(listQuery));
+    final petOptionsAsync = ref.watch(petOptionsProvider);
+
     return SafeArea(
-      child: petsAsync.when(
-        loading: () => const _PetsLoading(),
+      child: historiesAsync.when(
+        loading: () => const _HistoriesLoading(),
         error: (error, stack) => _RetryState(
-          title: 'Anabul belum bisa dimuat',
+          title: 'Riwayat belum bisa dimuat',
           message: 'Koneksi atau server sedang lambat. Coba muat ulang.',
-          icon: Icons.pets_outlined,
-          onRetry: () => ref.invalidate(pagedPetsProvider(listQuery)),
+          icon: Icons.history_toggle_off_outlined,
+          onRetry: () {
+            ref.invalidate(pagedHistoriesProvider(listQuery));
+            ref.invalidate(petOptionsProvider);
+          },
         ),
         data: (result) {
-          final pets = result.items;
+          final histories = result.items;
           final meta = result.meta;
           return RefreshIndicator(
             onRefresh: () async {
-              ref.invalidate(pagedPetsProvider(listQuery));
-              await ref.read(pagedPetsProvider(listQuery).future);
+              ref.invalidate(pagedHistoriesProvider(listQuery));
+              await ref.read(pagedHistoriesProvider(listQuery).future);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
               children: [
                 Text(
-                  'Anabul Saya',
+                  'Riwayat Perawatan',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${meta.total} anabul terdaftar',
+                  '${meta.total} riwayat tercatat',
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 TextField(
+                  controller: _searchController,
                   onChanged: (value) => setState(() {
                     _query = value;
                     _page = 1;
                   }),
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.search),
-                    hintText: 'Cari anabul',
+                    hintText: 'Cari riwayat / nama anabul',
                   ),
                 ),
+                const SizedBox(height: 12),
+                _HistoryFilters(
+                  petId: _petId,
+                  dateRange: _dateRange,
+                  petOptionsAsync: petOptionsAsync,
+                  onPetChanged: (value) => setState(() {
+                    _petId = value;
+                    _page = 1;
+                  }),
+                  onPickDate: _pickDateRange,
+                  onClear: _hasFilters
+                      ? () => setState(() {
+                          _searchController.clear();
+                          _query = '';
+                          _petId = null;
+                          _dateRange = null;
+                          _page = 1;
+                        })
+                      : null,
+                ),
                 const SizedBox(height: 18),
-                if (pets.isEmpty)
+                if (histories.isEmpty)
                   const EmptyState(
-                    title: 'Belum ada data anabul',
-                    message: 'Hubungi admin jika kamu sudah pernah berkunjung.',
+                    title: 'Belum ada riwayat',
+                    message: 'Riwayat perawatan akan tampil setelah kunjungan.',
                   )
                 else
-                  ...pets.asMap().entries.map((entry) {
+                  ...histories.asMap().entries.map((entry) {
                     final index = entry.key;
-                    final pet = entry.value;
+                    final history = entry.value;
                     return AnimatedEntry(
                       delay: Duration(milliseconds: 45 * index.clamp(0, 6)),
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: PressableScale(
-                          onTap: () => context.push('/pets/${pet.id}'),
+                          onTap: () => context.push('/histories/${history.id}'),
                           borderRadius: 16,
                           child: Container(
                             padding: const EdgeInsets.all(14),
@@ -112,9 +156,9 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(14),
                                   child: CachedNetworkImage(
-                                    imageUrl: pet.image,
-                                    width: 76,
-                                    height: 76,
+                                    imageUrl: history.petImage ?? '',
+                                    width: 60,
+                                    height: 60,
                                     fit: BoxFit.cover,
                                     errorWidget: (context, url, error) =>
                                         const ColoredBox(
@@ -130,7 +174,9 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        pet.name.trim(),
+                                        history.layanan ??
+                                            history.kategoriLayanan ??
+                                            'Perawatan',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -140,14 +186,18 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${pet.jenisHewan} - ${pet.gender}',
+                                        '${history.petName ?? '-'} - ${DateFormatters.short(history.tanggal)}',
                                         style: const TextStyle(
                                           color: AppColors.textSecondary,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        '${pet.totalRiwayat ?? 0} kunjungan - Terakhir: ${DateFormatters.short(pet.kunjunganTerakhir)}',
+                                        history.diagnosa ??
+                                            history.catatan ??
+                                            history.statusPembayaran,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         style: Theme.of(context)
                                             .textTheme
                                             .bodySmall
@@ -189,29 +239,63 @@ class _PetsPageState extends ConsumerState<PetsPage> {
       ),
     );
   }
+
+  bool get _hasFilters =>
+      _query.trim().isNotEmpty || _petId != null || _dateRange != null;
+
+  Future<void> _pickDateRange() async {
+    final now = DateTime.now();
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 5),
+      lastDate: DateTime(now.year + 1, 12, 31),
+      initialDateRange: _dateRange,
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(
+            context,
+          ).colorScheme.copyWith(primary: AppColors.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      _dateRange = picked;
+      _page = 1;
+    });
+  }
 }
 
-class _PetsLoading extends StatelessWidget {
-  const _PetsLoading();
+class _HistoriesLoading extends StatelessWidget {
+  const _HistoriesLoading();
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
       children: const [
-        SkeletonPulse(child: SkeletonBox(width: 180, height: 28, radius: 10)),
+        SkeletonPulse(child: SkeletonBox(width: 230, height: 28, radius: 10)),
         SizedBox(height: 8),
-        SkeletonPulse(child: SkeletonBox(width: 120, height: 14, radius: 8)),
+        SkeletonPulse(child: SkeletonBox(width: 150, height: 14, radius: 8)),
         SizedBox(height: 18),
         SkeletonPulse(
           child: SkeletonBox(width: double.infinity, height: 52, radius: 16),
         ),
+        SizedBox(height: 12),
+        SkeletonPulse(
+          child: SkeletonBox(width: double.infinity, height: 48, radius: 16),
+        ),
+        SizedBox(height: 12),
+        SkeletonPulse(
+          child: SkeletonBox(width: double.infinity, height: 54, radius: 16),
+        ),
         SizedBox(height: 18),
-        SkeletonCard(),
+        SkeletonCard(imageSize: 60),
         SizedBox(height: 12),
-        SkeletonCard(),
+        SkeletonCard(imageSize: 60),
         SizedBox(height: 12),
-        SkeletonCard(),
+        SkeletonCard(imageSize: 60),
       ],
     );
   }
@@ -249,6 +333,84 @@ class _RetryState extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _HistoryFilters extends StatelessWidget {
+  const _HistoryFilters({
+    required this.petId,
+    required this.dateRange,
+    required this.petOptionsAsync,
+    required this.onPetChanged,
+    required this.onPickDate,
+    required this.onClear,
+  });
+
+  final int? petId;
+  final DateTimeRange? dateRange;
+  final AsyncValue<List<Pet>> petOptionsAsync;
+  final ValueChanged<int?> onPetChanged;
+  final VoidCallback onPickDate;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: onPickDate,
+                icon: const Icon(Icons.date_range_outlined),
+                label: Text(_dateLabel),
+              ),
+            ),
+            const SizedBox(width: 10),
+            IconButton.filledTonal(
+              tooltip: 'Reset filter',
+              onPressed: onClear,
+              icon: const Icon(Icons.filter_alt_off_outlined),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        petOptionsAsync.when(
+          loading: () => const LinearProgressIndicator(minHeight: 2),
+          error: (error, stack) => const SizedBox.shrink(),
+          data: (pets) => DropdownButtonFormField<int?>(
+            initialValue: petId,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.pets_outlined),
+              hintText: 'Semua anabul',
+            ),
+            items: [
+              const DropdownMenuItem<int?>(
+                value: null,
+                child: Text('Semua anabul'),
+              ),
+              ...pets.map(
+                (pet) => DropdownMenuItem<int?>(
+                  value: pet.id,
+                  child: Text(
+                    pet.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            ],
+            onChanged: onPetChanged,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String get _dateLabel {
+    if (dateRange == null) return 'Rentang tanggal';
+    return '${DateFormatters.short(dateRange!.start.toIso8601String())} - ${DateFormatters.short(dateRange!.end.toIso8601String())}';
   }
 }
 

@@ -168,6 +168,8 @@ class _EditPetPageState extends ConsumerState<EditPetPage> {
             genderCode: _genderCode,
           );
       ref.invalidate(petsProvider);
+      ref.invalidate(pagedPetsProvider);
+      ref.invalidate(petOptionsProvider);
       ref.invalidate(petProvider(widget.petId));
       if (!mounted) return;
       context.pop();

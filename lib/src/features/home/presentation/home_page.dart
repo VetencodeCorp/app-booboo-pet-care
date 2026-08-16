@@ -3,6 +3,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/whatsapp_launcher.dart';
+import '../../../shared/widgets/animated_entry.dart';
+import '../../pets/presentation/histories_page.dart';
 import '../../pets/presentation/pets_page.dart';
 import '../../profile/presentation/profile_page.dart';
 
@@ -27,8 +30,9 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      _LandingPage(onHistoryTap: () => setState(() => _index = 1)),
+      _LandingPage(onHistoryTap: () => setState(() => _index = 2)),
       const PetsPage(),
+      const HistoriesPage(),
       const ProfilePage(),
     ];
 
@@ -71,6 +75,11 @@ class _FloatingNavBar extends StatelessWidget {
         label: 'Home',
         icon: Icons.home_outlined,
         activeIcon: Icons.home_rounded,
+      ),
+      _NavItemData(
+        label: 'Anabul',
+        icon: Icons.pets_outlined,
+        activeIcon: Icons.pets_rounded,
       ),
       _NavItemData(
         label: 'Riwayat',
@@ -224,100 +233,109 @@ class _LandingPage extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.help_outline),
-              ),
             ],
           ),
           const SizedBox(height: 26),
-          Container(
-            height: 270,
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary, AppColors.primaryDark],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.24),
-                  blurRadius: 34,
-                  offset: const Offset(0, 18),
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 80),
+            child: Container(
+              height: 270,
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -10,
-                  bottom: -18,
-                  child: Icon(
-                    Icons.pets_rounded,
-                    size: 168,
-                    color: Colors.white.withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.24),
+                    blurRadius: 34,
+                    offset: const Offset(0, 18),
                   ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -10,
+                    bottom: -18,
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.94, end: 1),
+                      duration: const Duration(milliseconds: 900),
+                      curve: Curves.easeOutBack,
+                      builder: (context, value, child) =>
+                          Transform.scale(scale: value, child: child),
+                      child: Icon(
+                        Icons.pets_rounded,
+                        size: 168,
                         color: Colors.white.withValues(alpha: 0.16),
-                        borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Text(
-                        'Client App',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Text(
+                          'Client App',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'Pantau riwayat perawatan anabul.',
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Semua kunjungan, diagnosa, dan catatan klinik masuk dalam satu aplikasi.',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.78),
-                        height: 1.45,
+                      const Spacer(),
+                      Text(
+                        'Pantau riwayat perawatan anabul.',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                            ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(height: 10),
+                      Text(
+                        'Semua kunjungan, diagnosa, dan catatan klinik masuk dalam satu aplikasi.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.78),
+                          height: 1.45,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onHistoryTap,
-                  icon: const Icon(Icons.history_rounded),
-                  label: const Text('Lihat Riwayat'),
+          AnimatedEntry(
+            delay: const Duration(milliseconds: 150),
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onHistoryTap,
+                    icon: const Icon(Icons.history_rounded),
+                    label: const Text('Lihat Riwayat'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              IconButton.filledTonal(
-                onPressed: () {},
-                icon: const Icon(Icons.chat_bubble_outline_rounded),
-              ),
-            ],
+                const SizedBox(width: 12),
+                IconButton.filledTonal(
+                  onPressed: () => _openWhatsapp(context),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 28),
           Text(
@@ -331,6 +349,18 @@ class _LandingPage extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openWhatsapp(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final opened = await openBoobooWhatsapp(
+      'Halo Booboo Pet Care, saya ingin bertanya tentang layanan dan riwayat perawatan anabul.',
+    );
+    if (!opened) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('WhatsApp tidak bisa dibuka')),
+      );
+    }
   }
 }
 
@@ -362,34 +392,37 @@ class _ServiceGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         final service = services[index];
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                backgroundColor: AppColors.softPurple,
-                child: Icon(service.$1, color: AppColors.primary),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                service.$2,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                service.$3,
-                textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-              ),
-            ],
+        return AnimatedEntry(
+          delay: Duration(milliseconds: 55 * index),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircleAvatar(
+                  backgroundColor: AppColors.softPurple,
+                  child: Icon(service.$1, color: AppColors.primary),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  service.$2,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  service.$3,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

@@ -28,6 +28,7 @@ class ApiClient {
           final token = await _storage.read(key: _tokenKey);
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
+            options.headers['X-Authorization'] = 'Bearer $token';
           }
           handler.next(options);
         },

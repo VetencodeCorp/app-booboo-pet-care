@@ -31,6 +31,16 @@ class LoginOtpResult {
   }
 }
 
+class VerifyOtpResult {
+  const VerifyOtpResult({
+    required this.member,
+    required this.requiresPasswordSetup,
+  });
+
+  final Member member;
+  final bool requiresPasswordSetup;
+}
+
 class AuthRepository {
   AuthRepository(this._client);
 
@@ -46,14 +56,37 @@ class AuthRepository {
     );
   }
 
-  Future<Member> verifyOtp(String otpToken, String otpCode) async {
+  Future<LoginOtpResult> activateMember(String phone) async {
+    final response = await _client.dio.post(
+      '/api/auth/activate-member',
+      data: {'phone': phone},
+    );
+    return LoginOtpResult.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<LoginOtpResult> forgotPassword(String phone) async {
+    final response = await _client.dio.post(
+      '/api/auth/forgot-password',
+      data: {'phone': phone},
+    );
+    return LoginOtpResult.fromJson(
+      response.data['data'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<VerifyOtpResult> verifyOtp(String otpToken, String otpCode) async {
     final response = await _client.dio.post(
       '/api/auth/verify-otp',
       data: {'otp_token': otpToken, 'otp_code': otpCode},
     );
     final data = response.data['data'] as Map<String, dynamic>;
     await _client.saveToken(data['access_token'].toString());
-    return Member.fromJson(data['member'] as Map<String, dynamic>);
+    return VerifyOtpResult(
+      member: Member.fromJson(data['member'] as Map<String, dynamic>),
+      requiresPasswordSetup: data['requires_password_setup'] == true,
+    );
   }
 
   Future<Member?> me() async {
@@ -92,6 +125,23 @@ class AuthRepository {
         'new_password_confirmation': confirmation,
       },
     );
+  }
+
+  Future<void> setupPassword({
+    required String newPassword,
+    required String confirmation,
+  }) async {
+    final response = await _client.dio.post(
+      '/api/me/password/setup',
+      data: {
+        'new_password': newPassword,
+        'new_password_confirmation': confirmation,
+      },
+    );
+    final data = response.data['data'];
+    if (data is Map<String, dynamic> && data['access_token'] != null) {
+      await _client.saveToken(data['access_token'].toString());
+    }
   }
 
   Future<void> logout() => _client.clearToken();
