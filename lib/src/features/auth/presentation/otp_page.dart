@@ -126,6 +126,7 @@ class _OtpPageState extends ConsumerState<OtpPage> {
   @override
   Widget build(BuildContext context) {
     final debugOtp = widget.args.result.debugOtp;
+    final memberName = widget.args.result.memberName.trim();
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -142,7 +143,9 @@ class _OtpPageState extends ConsumerState<OtpPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Masukkan kode OTP yang dikirim ke ${widget.args.result.phone}.',
+              memberName.isEmpty
+                  ? 'Masukkan kode OTP yang dikirim ke ${widget.args.result.phone}.'
+                  : 'Masukkan kode OTP untuk akun $memberName yang dikirim ke ${widget.args.result.phone}.',
             ),
             if (debugOtp != null) ...[
               const SizedBox(height: 12),

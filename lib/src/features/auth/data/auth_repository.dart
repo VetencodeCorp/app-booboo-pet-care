@@ -13,12 +13,14 @@ class LoginOtpResult {
     required this.otpToken,
     required this.phone,
     required this.expiredAt,
+    required this.memberName,
     this.debugOtp,
   });
 
   final String otpToken;
   final String phone;
   final String expiredAt;
+  final String memberName;
   final String? debugOtp;
 
   factory LoginOtpResult.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class LoginOtpResult {
       otpToken: json['otp_token']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       expiredAt: json['expired_at']?.toString() ?? '',
+      memberName: json['member_name']?.toString() ?? '',
       debugOtp: json['debug_otp']?.toString(),
     );
   }

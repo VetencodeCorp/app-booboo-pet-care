@@ -1,4 +1,4 @@
-package com.booboopetcare.app_client_booboo
+package com.booboopetcare.member
 
 import io.flutter.embedding.android.FlutterActivity
 

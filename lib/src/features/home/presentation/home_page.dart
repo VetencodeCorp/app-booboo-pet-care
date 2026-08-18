@@ -223,7 +223,11 @@ class _LandingPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.pets, color: AppColors.primary),
+              Image.asset(
+                'assets/images/logo.v2.png',
+                width: 34,
+                height: 34,
+              ),
               const SizedBox(width: 10),
               Text(
                 'Booboo Pet Care',

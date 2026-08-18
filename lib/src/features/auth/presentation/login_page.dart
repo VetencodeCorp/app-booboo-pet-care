@@ -74,6 +74,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           padding: const EdgeInsets.all(20),
           children: [
             const SizedBox(height: 32),
+            Image.asset(
+              'assets/images/logo.v2.png',
+              width: 82,
+              height: 82,
+              alignment: Alignment.centerLeft,
+            ),
+            const SizedBox(height: 18),
             Text(
               'Masuk',
               style: Theme.of(context).textTheme.headlineLarge?.copyWith(
