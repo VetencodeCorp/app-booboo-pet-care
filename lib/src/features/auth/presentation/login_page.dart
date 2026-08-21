@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../application/auth_controller.dart';
 import 'otp_page.dart';
+import 'widgets/auth_shell.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -67,133 +69,100 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 32),
-            Image.asset(
-              'assets/images/logo.v2.png',
-              width: 82,
-              height: 82,
-              alignment: Alignment.centerLeft,
+    return AuthShell(
+      title: 'Masuk',
+      subtitle: 'Gunakan nomor HP yang terdaftar di Booboo Pet Care.',
+      children: [
+        if (_error != null) ...[
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFDAD6),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.danger),
             ),
-            const SizedBox(height: 18),
-            Text(
-              'Masuk',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Gunakan nomor HP yang terdaftar di Booboo Pet Care.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 28),
-            if (_error != null) ...[
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFDAD6),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.danger),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.danger),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: const TextStyle(color: AppColors.danger),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-            ],
-            TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.phone_iphone),
-                labelText: 'Nomor Handphone',
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _password,
-              obscureText: _obscure,
-              decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.lock_outline),
-                labelText: 'Password',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => context.push('/forgot-password'),
-                child: const Text('Lupa password?'),
-              ),
-            ),
-            const SizedBox(height: 18),
-            FilledButton(
-              onPressed: _loading ? null : _submit,
-              child: _loading
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Masuk'),
-            ),
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed: _loading
-                  ? null
-                  : () => context.push('/activate-member'),
-              icon: const Icon(Icons.verified_user_outlined),
-              label: const Text('Aktivasi member lama'),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Belum punya password? Pakai aktivasi member lama untuk masuk lewat OTP.',
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 160),
-            const Divider(),
-            const SizedBox(height: 12),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: AppColors.textSecondary,
+                const Icon(Icons.error_outline, color: AppColors.danger),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: AppColors.danger),
+                  ),
                 ),
-                SizedBox(width: 8),
-                Text('Member lama tidak perlu daftar ulang.'),
               ],
             ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        TextField(
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.phone_iphone),
+            labelText: 'Nomor Handphone',
+          ),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _password,
+          obscureText: _obscure,
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.lock_outline),
+            labelText: 'Password',
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscure
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+              ),
+              onPressed: () => setState(() => _obscure = !_obscure),
+            ),
+          ),
+        ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () => context.push('/forgot-password'),
+            child: const Text('Lupa password?'),
+          ),
+        ),
+        const SizedBox(height: 18),
+        PremiumActionButton(
+          label: 'Masuk',
+          icon: Icons.login_rounded,
+          loading: _loading,
+          onPressed: _loading ? null : _submit,
+        ),
+        const SizedBox(height: 14),
+        PremiumActionButton(
+          label: 'Aktivasi member lama',
+          icon: Icons.verified_user_outlined,
+          secondary: true,
+          onPressed: _loading ? null : () => context.push('/activate-member'),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Belum punya password? Pakai aktivasi member lama untuk masuk lewat OTP.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 18),
+        const Divider(),
+        const SizedBox(height: 12),
+        const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
+            SizedBox(width: 8),
+            Flexible(child: Text('Member lama tidak perlu daftar ulang.')),
           ],
         ),
-      ),
+      ],
     );
   }
 }

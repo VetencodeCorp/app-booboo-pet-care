@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../application/auth_controller.dart';
 import 'otp_page.dart';
+import 'widgets/auth_error_box.dart';
+import 'widgets/auth_shell.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -51,52 +54,40 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 32),
-            Text(
-              'Lupa Password',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Masukkan nomor HP member. Kami kirim OTP untuk verifikasi reset password.',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 28),
-            if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: AppColors.danger)),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: _phone,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.phone_iphone),
-                labelText: 'Nomor Handphone',
-              ),
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: _loading ? null : _submit,
-              icon: _loading
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sms_outlined),
-              label: const Text('Kirim OTP'),
-            ),
-          ],
+    return AuthShell(
+      title: 'Lupa Password',
+      subtitle:
+          'Masukkan nomor HP member. Kami kirim OTP untuk verifikasi reset password.',
+      showLogo: false,
+      children: [
+        if (_error != null) ...[
+          AuthErrorBox(_error!),
+          const SizedBox(height: 18),
+        ],
+        TextField(
+          controller: _phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.phone_iphone),
+            labelText: 'Nomor Handphone',
+          ),
         ),
-      ),
+        const SizedBox(height: 18),
+        PremiumActionButton(
+          label: 'Kirim OTP',
+          icon: Icons.sms_outlined,
+          loading: _loading,
+          onPressed: _loading ? null : _submit,
+        ),
+        const SizedBox(height: 14),
+        Text(
+          'Setelah OTP valid, kamu bisa membuat password baru.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
     );
   }
 }

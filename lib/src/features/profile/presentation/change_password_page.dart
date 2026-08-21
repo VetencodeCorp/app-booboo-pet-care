@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../../auth/application/auth_controller.dart';
 
 class ChangePasswordPage extends ConsumerStatefulWidget {
@@ -35,54 +37,96 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _currentController,
-                  obscureText: _obscure,
-                  textInputAction: TextInputAction.next,
-                  decoration: _passwordDecoration('Password lama'),
-                  validator: (value) => (value ?? '').isEmpty
-                      ? 'Password lama wajib diisi'
-                      : null,
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: _newController,
-                  obscureText: _obscure,
-                  textInputAction: TextInputAction.next,
-                  decoration: _passwordDecoration('Password baru'),
-                  validator: (value) {
-                    if ((value ?? '').length < 6) {
-                      return 'Minimal 6 karakter';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: _confirmController,
-                  obscureText: _obscure,
-                  decoration: _passwordDecoration('Konfirmasi password'),
-                  validator: (value) => value != _newController.text
-                      ? 'Konfirmasi tidak sama'
-                      : null,
-                ),
-                const SizedBox(height: 22),
-                FilledButton.icon(
-                  onPressed: _isSaving ? null : _save,
-                  icon: _isSaving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.lock_reset_rounded),
-                  label: const Text('Ganti Password'),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.06),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
                 ),
               ],
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 24,
+                  backgroundColor: AppColors.softPurple,
+                  child: Icon(
+                    Icons.lock_reset_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    'Gunakan password baru minimal 6 karakter untuk menjaga akun member tetap aman.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Form(
+            key: _formKey,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _currentController,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.next,
+                    decoration: _passwordDecoration('Password lama'),
+                    validator: (value) => (value ?? '').isEmpty
+                        ? 'Password lama wajib diisi'
+                        : null,
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _newController,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.next,
+                    decoration: _passwordDecoration('Password baru'),
+                    validator: (value) {
+                      if ((value ?? '').length < 6) {
+                        return 'Minimal 6 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  TextFormField(
+                    controller: _confirmController,
+                    obscureText: _obscure,
+                    decoration: _passwordDecoration('Konfirmasi password'),
+                    validator: (value) => value != _newController.text
+                        ? 'Konfirmasi tidak sama'
+                        : null,
+                  ),
+                  const SizedBox(height: 22),
+                  PremiumActionButton(
+                    label: 'Ganti Password',
+                    icon: Icons.lock_reset_rounded,
+                    loading: _isSaving,
+                    onPressed: _isSaving ? null : _save,
+                  ),
+                ],
+              ),
             ),
           ),
         ],

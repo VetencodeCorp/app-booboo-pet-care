@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../application/auth_controller.dart';
+import 'widgets/auth_error_box.dart';
+import 'widgets/auth_shell.dart';
 
 class SetupPasswordPage extends ConsumerStatefulWidget {
   const SetupPasswordPage({
@@ -83,62 +85,41 @@ class _SetupPasswordPageState extends ConsumerState<SetupPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 32),
-            Text(
-              widget.args.title,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.args.subtitle,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 28),
-            if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: AppColors.danger)),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: _password,
-              obscureText: _obscure,
-              decoration: _decoration('Password baru'),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _confirmation,
-              obscureText: _obscure,
-              decoration: _decoration('Konfirmasi password'),
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: _loading ? null : _save,
-              icon: _loading
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lock_reset_rounded),
-              label: const Text('Simpan Password'),
-            ),
-            if (widget.args.showSkip) ...[
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: _loading ? null : () => context.go('/pets'),
-                child: const Text('Lewati dulu'),
-              ),
-            ],
-          ],
+    return AuthShell(
+      title: widget.args.title,
+      subtitle: widget.args.subtitle,
+      showLogo: false,
+      children: [
+        if (_error != null) ...[
+          AuthErrorBox(_error!),
+          const SizedBox(height: 18),
+        ],
+        TextField(
+          controller: _password,
+          obscureText: _obscure,
+          decoration: _decoration('Password baru'),
         ),
-      ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _confirmation,
+          obscureText: _obscure,
+          decoration: _decoration('Konfirmasi password'),
+        ),
+        const SizedBox(height: 18),
+        PremiumActionButton(
+          label: 'Simpan Password',
+          icon: Icons.lock_reset_rounded,
+          loading: _loading,
+          onPressed: _loading ? null : _save,
+        ),
+        if (widget.args.showSkip) ...[
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: _loading ? null : () => context.go('/pets'),
+            child: const Text('Lewati dulu'),
+          ),
+        ],
+      ],
     );
   }
 

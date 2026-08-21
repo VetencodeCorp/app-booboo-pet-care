@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../application/auth_controller.dart';
 import '../data/auth_repository.dart';
 import 'setup_password_page.dart';
+import 'widgets/auth_shell.dart';
 
 enum OtpFlow { login, activation, forgot }
 
@@ -114,9 +116,13 @@ class _OtpPageState extends ConsumerState<OtpPage> {
           textAlign: TextAlign.center,
         ),
         actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Mulai'),
+          SizedBox(
+            width: double.infinity,
+            child: PremiumActionButton(
+              label: 'Mulai',
+              icon: Icons.pets_rounded,
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
         ],
       ),
@@ -127,60 +133,79 @@ class _OtpPageState extends ConsumerState<OtpPage> {
   Widget build(BuildContext context) {
     final debugOtp = widget.args.result.debugOtp;
     final memberName = widget.args.result.memberName.trim();
-    return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            const SizedBox(height: 32),
-            Text(
-              'Verifikasi OTP',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w900,
-              ),
+    return AuthShell(
+      title: 'Verifikasi OTP',
+      subtitle: memberName.isEmpty
+          ? 'Masukkan kode OTP yang dikirim ke ${widget.args.result.phone}.'
+          : 'Masukkan kode OTP untuk akun $memberName yang dikirim ke ${widget.args.result.phone}.',
+      showLogo: false,
+      children: [
+        if (debugOtp != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.softPurple,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
             ),
-            const SizedBox(height: 8),
-            Text(
-              memberName.isEmpty
-                  ? 'Masukkan kode OTP yang dikirim ke ${widget.args.result.phone}.'
-                  : 'Masukkan kode OTP untuk akun $memberName yang dikirim ke ${widget.args.result.phone}.',
+            child: Row(
+              children: [
+                const Icon(Icons.code_rounded, color: AppColors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Dev OTP: $debugOtp',
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            if (debugOtp != null) ...[
-              const SizedBox(height: 12),
-              Chip(
-                avatar: const Icon(Icons.code_rounded, size: 18),
-                label: Text('Dev OTP: $debugOtp'),
-              ),
-            ],
-            const SizedBox(height: 28),
-            if (_error != null) ...[
-              Text(_error!, style: const TextStyle(color: AppColors.danger)),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: _otp,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.password),
-                labelText: 'Kode OTP',
-              ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        if (_error != null) ...[
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFDAD6),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.danger),
             ),
-            const SizedBox(height: 18),
-            FilledButton(
-              onPressed: _loading ? null : _verify,
-              child: _loading
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Verifikasi'),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.danger),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _error!,
+                    style: const TextStyle(color: AppColors.danger),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+          const SizedBox(height: 18),
+        ],
+        TextField(
+          controller: _otp,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.password),
+            labelText: 'Kode OTP',
+          ),
         ),
-      ),
+        const SizedBox(height: 18),
+        PremiumActionButton(
+          label: 'Verifikasi',
+          icon: Icons.verified_rounded,
+          loading: _loading,
+          onPressed: _loading ? null : _verify,
+        ),
+      ],
     );
   }
 }
