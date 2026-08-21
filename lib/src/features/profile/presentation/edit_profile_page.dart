@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../../auth/application/auth_controller.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -48,25 +49,56 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             return const Center(child: Text('Silakan login ulang.'));
           }
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
             children: [
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppColors.softPurple,
-                  borderRadius: BorderRadius.circular(24),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFFFFF), AppColors.lavender],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      blurRadius: 26,
+                      offset: const Offset(0, 14),
+                    ),
+                  ],
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
+                      radius: 26,
                       backgroundColor: AppColors.primary,
                       child: Icon(Icons.person_rounded, color: Colors.white),
                     ),
-                    SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Expanded(
-                      child: Text(
-                        'Ubah data kontak yang terlihat di aplikasi client.',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Data Profil',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Ubah data kontak yang terlihat di aplikasi client.',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -75,42 +107,46 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               const SizedBox(height: 22),
               Form(
                 key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Nama lengkap',
-                        prefixIcon: Icon(Icons.badge_outlined),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Nama lengkap',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                        ),
+                        validator: (value) => (value ?? '').trim().isEmpty
+                            ? 'Nama wajib diisi'
+                            : null,
                       ),
-                      validator: (value) => (value ?? '').trim().isEmpty
-                          ? 'Nama wajib diisi'
-                          : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _addressController,
-                      minLines: 3,
-                      maxLines: 5,
-                      decoration: const InputDecoration(
-                        labelText: 'Alamat',
-                        prefixIcon: Icon(Icons.location_on_outlined),
+                      const SizedBox(height: 14),
+                      TextFormField(
+                        controller: _addressController,
+                        minLines: 3,
+                        maxLines: 5,
+                        decoration: const InputDecoration(
+                          labelText: 'Alamat',
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 22),
-                    FilledButton.icon(
-                      onPressed: _isSaving ? null : _save,
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.check_rounded),
-                      label: const Text('Simpan Profil'),
-                    ),
-                  ],
+                      const SizedBox(height: 22),
+                      PremiumActionButton(
+                        label: 'Simpan Profil',
+                        icon: Icons.check_rounded,
+                        loading: _isSaving,
+                        onPressed: _isSaving ? null : _save,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -13,6 +13,7 @@ import '../../features/pets/presentation/history_detail_page.dart';
 import '../../features/pets/presentation/pet_detail_page.dart';
 import '../../features/profile/presentation/change_password_page.dart';
 import '../../features/profile/presentation/edit_profile_page.dart';
+import '../../features/profile/presentation/privacy_policy_page.dart';
 import '../../features/shell/presentation/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -93,6 +94,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/profile/password',
         pageBuilder: (context, state) =>
             _slidePage(state: state, child: const ChangePasswordPage()),
+      ),
+      GoRoute(
+        path: '/privacy-policy',
+        pageBuilder: (context, state) =>
+            _slidePage(state: state, child: const PrivacyPolicyPage()),
       ),
       GoRoute(
         path: '/histories/:id',
