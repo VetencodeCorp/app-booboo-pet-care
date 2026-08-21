@@ -8,7 +8,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatters.dart';
+import '../../../shared/widgets/animated_entry.dart';
 import '../data/pets_repository.dart';
+import '../domain/pet_history.dart';
 
 class PetDetailPage extends ConsumerStatefulWidget {
   const PetDetailPage({required this.petId, super.key});
@@ -29,153 +31,69 @@ class _PetDetailPageState extends ConsumerState<PetDetailPage> {
     final historiesAsync = ref.watch(petHistoriesProvider(widget.petId));
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
+      appBar: AppBar(title: const Text('Detail Anabul')),
       body: petAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text(error.toString())),
-        data: (pet) => CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 310,
-              pinned: true,
-              stretch: true,
-              actions: [
-                IconButton.filledTonal(
-                  tooltip: 'Ganti foto',
-                  onPressed: _isUploading ? null : _showPhotoActions,
-                  icon: _isUploading
-                      ? const SizedBox.square(
-                          dimension: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.edit_outlined),
-                ),
-                const SizedBox(width: 10),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CachedNetworkImage(
-                      imageUrl: pet.image,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) => Container(
-                        color: AppColors.softPurple,
-                        child: const Icon(
-                          Icons.pets,
-                          color: AppColors.primary,
-                          size: 72,
-                        ),
-                      ),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.black.withValues(alpha: 0.04),
-                            Colors.black.withValues(alpha: 0.58),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 20,
-                      right: 20,
-                      bottom: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            pet.name.trim(),
-                            style: Theme.of(context).textTheme.headlineLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              _HeroChip(label: pet.jenisHewan),
-                              _HeroChip(label: pet.gender),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+        data: (pet) => SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 34),
+            children: [
+              AnimatedEntry(
+                delay: const Duration(milliseconds: 60),
+                child: _PetHeroCard(
+                  imageUrl: pet.image,
+                  name: pet.name,
+                  isUploading: _isUploading,
+                  onPhotoTap: _showPhotoActions,
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _PetInfoCard(
-                    name: pet.name,
-                    type: pet.jenisHewan,
-                    gender: pet.gender,
-                    owner: pet.ownerName ?? '-',
-                    historiesCount: pet.totalRiwayat,
-                    lastVisit: pet.kunjunganTerakhir,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Riwayat',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  historiesAsync.when(
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Text(error.toString()),
-                    data: (histories) => Column(
-                      children: histories
-                          .map(
-                            (history) => Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: AppColors.border),
-                              ),
-                              child: ListTile(
-                                onTap: () =>
-                                    context.push('/histories/${history.id}'),
-                                leading: const CircleAvatar(
-                                  backgroundColor: AppColors.softPurple,
-                                  child: Icon(
-                                    Icons.medical_services_outlined,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                title: Text(
-                                  history.layanan ??
-                                      history.kategoriLayanan ??
-                                      '-',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  '${DateFormatters.short(history.tanggal)}\n${history.diagnosa ?? history.catatan ?? '-'}',
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ]),
+              const SizedBox(height: 18),
+              AnimatedEntry(
+                delay: const Duration(milliseconds: 120),
+                child: _PetInfoCard(
+                  type: pet.jenisHewan,
+                  gender: pet.gender,
+                  owner: pet.ownerName ?? '-',
+                  historiesCount: pet.totalRiwayat,
+                  lastVisit: pet.kunjunganTerakhir,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 22),
+              Text(
+                'Riwayat Terbaru',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 12),
+              historiesAsync.when(
+                loading: () => const _HistoryLoading(),
+                error: (error, stack) =>
+                    _HistoryError(message: error.toString()),
+                data: (histories) {
+                  if (histories.isEmpty) return const _HistoryEmpty();
+                  return Column(
+                    children: histories.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final history = entry.value;
+                      return AnimatedEntry(
+                        delay: Duration(milliseconds: 45 * index.clamp(0, 6)),
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _HistoryCard(
+                            history: history,
+                            onTap: () =>
+                                context.push('/histories/${history.id}'),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -351,9 +269,115 @@ class _PetDetailPageState extends ConsumerState<PetDetailPage> {
   }
 }
 
+class _PetHeroCard extends StatelessWidget {
+  const _PetHeroCard({
+    required this.imageUrl,
+    required this.name,
+    required this.isUploading,
+    required this.onPhotoTap,
+  });
+
+  final String imageUrl;
+  final String name;
+  final bool isUploading;
+  final VoidCallback onPhotoTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFFFF), AppColors.lavender],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: AspectRatio(
+              aspectRatio: 1.12,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) => Container(
+                  color: AppColors.softPurple,
+                  child: const Icon(
+                    Icons.pets_rounded,
+                    color: AppColors.primary,
+                    size: 72,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.58),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 18,
+            child: Text(
+              name.trim(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                height: 1.1,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            top: 12,
+            child: IconButton.filled(
+              tooltip: 'Atur foto',
+              onPressed: isUploading ? null : onPhotoTap,
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.surface.withValues(alpha: 0.9),
+                foregroundColor: AppColors.primary,
+              ),
+              icon: isUploading
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.edit_outlined),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PetInfoCard extends StatelessWidget {
   const _PetInfoCard({
-    required this.name,
     required this.type,
     required this.gender,
     required this.owner,
@@ -361,7 +385,6 @@ class _PetInfoCard extends StatelessWidget {
     required this.lastVisit,
   });
 
-  final String name;
   final String type;
   final String gender;
   final String owner;
@@ -371,32 +394,32 @@ class _PetInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Detail Anabul',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-                ),
-              ),
-            ],
+          Text(
+            'Informasi Anabul',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 12),
-          _InfoRow(icon: Icons.favorite_outline, label: 'Nama', value: name),
-          // _InfoRow(icon: Icons.category_outlined, label: 'Jenis', value: type),
-          // _InfoRow(icon: Icons.wc_outlined, label: 'Kelamin', value: gender),
-          _InfoRow(icon: Icons.person_outline, label: 'Owner', value: owner),
+          const SizedBox(height: 14),
+          _InfoRow(icon: Icons.category_outlined, label: 'Jenis', value: type),
+          _InfoRow(icon: Icons.wc_outlined, label: 'Kelamin', value: gender),
+          _InfoRow(icon: Icons.person_outline, label: 'Pemilik', value: owner),
           _InfoRow(
             icon: Icons.history_rounded,
             label: 'Total riwayat',
@@ -406,6 +429,7 @@ class _PetInfoCard extends StatelessWidget {
             icon: Icons.calendar_month_outlined,
             label: 'Kunjungan terakhir',
             value: DateFormatters.short(lastVisit),
+            last: true,
           ),
         ],
       ),
@@ -418,36 +442,47 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.last = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final bool last;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: last ? 0 : 12),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: AppColors.softPurple,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.softPurple,
+              borderRadius: BorderRadius.circular(15),
+            ),
             child: Icon(icon, size: 18, color: AppColors.primary),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Flexible(
             child: Text(
               value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
         ],
@@ -456,26 +491,149 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _HeroChip extends StatelessWidget {
-  const _HeroChip({required this.label});
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({required this.history, required this.onTap});
 
-  final String label;
+  final PetHistory history;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = history.layanan ?? history.kategoriLayanan ?? '-';
+    final note = history.diagnosa ?? history.tindakan ?? history.catatan ?? '-';
+
+    return PressableScale(
+      onTap: onTap,
+      borderRadius: 22,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppColors.softPurple,
+                borderRadius: BorderRadius.circular(17),
+              ),
+              child: const Icon(
+                Icons.medical_services_outlined,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    DateFormatters.short(history.tanggal),
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    note,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryLoading extends StatelessWidget {
+  const _HistoryLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 24),
+      child: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _HistoryError extends StatelessWidget {
+  const _HistoryError({required this.message});
+
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
       ),
       child: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w800,
-        ),
+        message,
+        style: const TextStyle(color: AppColors.textSecondary),
+      ),
+    );
+  }
+}
+
+class _HistoryEmpty extends StatelessWidget {
+  const _HistoryEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: const Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.softPurple,
+            child: Icon(Icons.history_rounded, color: AppColors.primary),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Belum ada riwayat perawatan untuk anabul ini.',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
