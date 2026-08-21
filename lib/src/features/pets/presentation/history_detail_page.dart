@@ -1,7 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatters.dart';
@@ -46,17 +45,9 @@ class HistoryDetailPage extends ConsumerWidget {
                       weight: _withUnit(detail.bb, 'kg'),
                       temperature: _withUnit(detail.suhu, 'C'),
                       diagnosis: detail.diagnosa ?? '-',
-                      treatment: detail.tindakan ?? '-',
+                      // treatment: detail.tindakan ?? '-',
                       note: detail.catatan ?? '-',
                       doctor: detail.dokter ?? '-',
-                    ),
-                    const SizedBox(height: 26),
-                    const _SectionTitle('Tagihan'),
-                    const SizedBox(height: 12),
-                    _BillingCard(
-                      invoice: detail.nota ?? '-',
-                      status: detail.status,
-                      total: detail.jumlah,
                     ),
                     const SizedBox(height: 112),
                   ]),
@@ -264,7 +255,7 @@ class _MedicalSummaryCard extends StatelessWidget {
     required this.weight,
     required this.temperature,
     required this.diagnosis,
-    required this.treatment,
+    // required this.treatment,
     required this.note,
     required this.doctor,
   });
@@ -272,7 +263,7 @@ class _MedicalSummaryCard extends StatelessWidget {
   final String weight;
   final String temperature;
   final String diagnosis;
-  final String treatment;
+  // final String treatment;
   final String note;
   final String doctor;
 
@@ -311,7 +302,7 @@ class _MedicalSummaryCard extends StatelessWidget {
           const Divider(height: 1, color: AppColors.border),
           _TextBlock(label: 'Diagnosa', value: diagnosis),
           const Divider(height: 1, color: AppColors.border),
-          _TextBlock(label: 'Tindakan', value: treatment),
+          // _TextBlock(label: 'Tindakan', value: treatment),
           const Divider(height: 1, color: AppColors.border),
           Container(
             width: double.infinity,
@@ -387,83 +378,6 @@ class _MedicalSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BillingCard extends StatelessWidget {
-  const _BillingCard({
-    required this.invoice,
-    required this.status,
-    required this.total,
-  });
-
-  final String invoice;
-  final String status;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final paid = status.toLowerCase().contains('lunas');
-    final statusColor = paid ? AppColors.mint : AppColors.amber;
-    final format = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
-
-    return _Card(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: statusColor.withValues(alpha: 0.14),
-            child: Icon(
-              paid ? Icons.check_circle_outline : Icons.pending_outlined,
-              color: statusColor,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Status Pembayaran',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontWeight: FontWeight.w900, height: 1.2),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'ID: $invoice',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  format.format(total),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: _StatusPill(text: status, color: statusColor),
           ),
         ],
       ),
@@ -624,31 +538,6 @@ class _Pill extends StatelessWidget {
           color: Color(0xFF047765),
           fontWeight: FontWeight.w900,
         ),
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: color.withValues(alpha: 0.65)),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: color, fontWeight: FontWeight.w900),
       ),
     );
   }

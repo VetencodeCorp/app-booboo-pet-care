@@ -394,8 +394,8 @@ class _PetInfoCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _InfoRow(icon: Icons.favorite_outline, label: 'Nama', value: name),
-          _InfoRow(icon: Icons.category_outlined, label: 'Jenis', value: type),
-          _InfoRow(icon: Icons.wc_outlined, label: 'Kelamin', value: gender),
+          // _InfoRow(icon: Icons.category_outlined, label: 'Jenis', value: type),
+          // _InfoRow(icon: Icons.wc_outlined, label: 'Kelamin', value: gender),
           _InfoRow(icon: Icons.person_outline, label: 'Owner', value: owner),
           _InfoRow(
             icon: Icons.history_rounded,
