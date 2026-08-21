@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,12 +7,15 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/date_formatters.dart';
+import '../../../core/utils/whatsapp_launcher.dart';
 import '../../../shared/widgets/animated_entry.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/premium_action_button.dart';
 import '../../../shared/widgets/skeleton.dart';
 import '../../auth/application/auth_controller.dart';
 import '../data/pets_repository.dart';
 import '../domain/pet.dart';
+import '../domain/pet_history.dart';
 
 class HistoriesPage extends ConsumerStatefulWidget {
   const HistoriesPage({super.key});
@@ -25,9 +30,11 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
   int _page = 1;
   int? _petId;
   DateTimeRange? _dateRange;
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -35,17 +42,17 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+
     if (auth.isLoading) {
       return const SafeArea(child: Center(child: CircularProgressIndicator()));
     }
+
     if (auth.asData?.value == null) {
-      return const SafeArea(
-        child: Center(
-          child: EmptyState(
-            title: 'Perlu masuk',
-            message: 'Masuk untuk melihat semua riwayat perawatan.',
-            icon: Icons.lock_outline,
-          ),
+      return SafeArea(
+        child: _HistoriesGuestState(
+          onLogin: () => context.push('/login'),
+          onWhatsapp: () => _openWhatsapp(context),
+          onPrivacy: () => context.push('/privacy-policy'),
         ),
       );
     }
@@ -75,6 +82,7 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
         data: (result) {
           final histories = result.items;
           final meta = result.meta;
+
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(pagedHistoriesProvider(listQuery));
@@ -84,48 +92,32 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
               children: [
-                Text(
-                  'Riwayat Perawatan',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+                AnimatedEntry(
+                  delay: const Duration(milliseconds: 60),
+                  child: _HistoriesHero(total: meta.total),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '${meta.total} riwayat tercatat',
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() {
-                    _query = value;
-                    _page = 1;
-                  }),
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Cari riwayat / nama anabul',
+                const SizedBox(height: 18),
+                AnimatedEntry(
+                  delay: const Duration(milliseconds: 120),
+                  child: _SearchBox(
+                    controller: _searchController,
+                    onChanged: _onSearchChanged,
                   ),
                 ),
                 const SizedBox(height: 12),
-                _HistoryFilters(
-                  petId: _petId,
-                  dateRange: _dateRange,
-                  petOptionsAsync: petOptionsAsync,
-                  onPetChanged: (value) => setState(() {
-                    _petId = value;
-                    _page = 1;
-                  }),
-                  onPickDate: _pickDateRange,
-                  onClear: _hasFilters
-                      ? () => setState(() {
-                          _searchController.clear();
-                          _query = '';
-                          _petId = null;
-                          _dateRange = null;
-                          _page = 1;
-                        })
-                      : null,
+                AnimatedEntry(
+                  delay: const Duration(milliseconds: 150),
+                  child: _HistoryFilters(
+                    petId: _petId,
+                    dateRange: _dateRange,
+                    petOptionsAsync: petOptionsAsync,
+                    onPetChanged: (value) => setState(() {
+                      _petId = value;
+                      _page = 1;
+                    }),
+                    onPickDate: _pickDateRange,
+                    onClear: _hasFilters ? _clearFilters : null,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 if (histories.isEmpty)
@@ -141,86 +133,15 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
                       delay: Duration(milliseconds: 45 * index.clamp(0, 6)),
                       child: Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: PressableScale(
+                        child: _HistoryCard(
+                          history: history,
                           onTap: () => context.push('/histories/${history.id}'),
-                          borderRadius: 16,
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: CachedNetworkImage(
-                                    imageUrl: history.petImage ?? '',
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) =>
-                                        const ColoredBox(
-                                          color: AppColors.softPurple,
-                                          child: Icon(Icons.pets),
-                                        ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        history.layanan ??
-                                            history.kategoriLayanan ??
-                                            'Perawatan',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w900,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${history.petName ?? '-'} - ${DateFormatters.short(history.tanggal)}',
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        history.diagnosa ??
-                                            history.catatan ??
-                                            history.statusPembayaran,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: AppColors.textSecondary,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.chevron_right,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                     );
                   }),
                 if (meta.lastPage > 1) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   _PaginationBar(
                     page: meta.page,
                     lastPage: meta.lastPage,
@@ -242,6 +163,29 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
 
   bool get _hasFilters =>
       _query.trim().isNotEmpty || _petId != null || _dateRange != null;
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 700), () {
+      final nextQuery = value.trim();
+      if (!mounted || nextQuery == _query) return;
+      setState(() {
+        _query = nextQuery;
+        _page = 1;
+      });
+    });
+  }
+
+  void _clearFilters() {
+    _searchDebounce?.cancel();
+    setState(() {
+      _searchController.clear();
+      _query = '';
+      _petId = null;
+      _dateRange = null;
+      _page = 1;
+    });
+  }
 
   Future<void> _pickDateRange() async {
     final now = DateTime.now();
@@ -265,6 +209,478 @@ class _HistoriesPageState extends ConsumerState<HistoriesPage> {
       _page = 1;
     });
   }
+
+  Future<void> _openWhatsapp(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final opened = await openBoobooWhatsapp(
+      'Halo Booboo Pet Care, saya butuh bantuan untuk melihat riwayat perawatan.',
+    );
+    if (!opened) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('WhatsApp tidak bisa dibuka')),
+      );
+    }
+  }
+}
+
+class _HistoriesHero extends StatelessWidget {
+  const _HistoriesHero({required this.total});
+
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFFFF), AppColors.lavender],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -8,
+            bottom: -10,
+            child: Icon(
+              Icons.history_rounded,
+              size: 132,
+              color: AppColors.primary.withValues(alpha: 0.08),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.softPurple.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Text(
+                  'Riwayat Perawatan',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 26),
+              Text(
+                '$total riwayat tercatat',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w900,
+                  height: 1.14,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Pantau diagnosa, tindakan, dan catatan perawatan anabul.',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SearchBox extends StatelessWidget {
+  const _SearchBox({required this.controller, required this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        prefixIcon: const Icon(Icons.search_rounded),
+        hintText: 'Cari riwayat / nama anabul',
+        filled: true,
+        fillColor: AppColors.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.4),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({required this.history, required this.onTap});
+
+  final PetHistory history;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = history.layanan ?? history.kategoriLayanan ?? 'Perawatan';
+    final note = history.diagnosa ?? history.tindakan ?? history.catatan ?? '-';
+
+    return PressableScale(
+      onTap: onTap,
+      borderRadius: 24,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: CachedNetworkImage(
+                imageUrl: history.petImage ?? '',
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorWidget: (context, url, error) => const ColoredBox(
+                  color: AppColors.softPurple,
+                  child: SizedBox(
+                    width: 70,
+                    height: 70,
+                    child: Icon(Icons.pets, color: AppColors.primary),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${history.petName ?? '-'} - ${DateFormatters.short(history.tanggal)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    note,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoriesGuestState extends StatelessWidget {
+  const _HistoriesGuestState({
+    required this.onLogin,
+    required this.onWhatsapp,
+    required this.onPrivacy,
+  });
+
+  final VoidCallback onLogin;
+  final VoidCallback onWhatsapp;
+  final VoidCallback onPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+      children: [
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 60),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFFFFF), AppColors.lavender],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(32),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  blurRadius: 32,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -8,
+                  bottom: -10,
+                  child: Icon(
+                    Icons.history_rounded,
+                    size: 132,
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.softPurple.withValues(alpha: 0.88),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Text(
+                        'Belum Login',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    Text(
+                      'Riwayat belum terbuka.',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w900,
+                            height: 1.14,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Masuk untuk melihat semua riwayat perawatan anabul.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        height: 1.45,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    PremiumActionButton(
+                      label: 'Masuk Sekarang',
+                      icon: Icons.login_rounded,
+                      onPressed: onLogin,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        AnimatedEntry(
+          delay: const Duration(milliseconds: 120),
+          child: _GuestMenu(
+            onLogin: onLogin,
+            onWhatsapp: onWhatsapp,
+            onPrivacy: onPrivacy,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _GuestMenu extends StatelessWidget {
+  const _GuestMenu({
+    required this.onLogin,
+    required this.onWhatsapp,
+    required this.onPrivacy,
+  });
+
+  final VoidCallback onLogin;
+  final VoidCallback onWhatsapp;
+  final VoidCallback onPrivacy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _GuestTile(
+            icon: Icons.login_rounded,
+            title: 'Masuk Member',
+            subtitle: 'Akses riwayat perawatan anabul',
+            onTap: onLogin,
+          ),
+          const _GuestDivider(),
+          _GuestTile(
+            icon: Icons.chat_bubble_outline_rounded,
+            title: 'Bantuan WhatsApp',
+            subtitle: 'Hubungi admin Booboo',
+            onTap: onWhatsapp,
+          ),
+          const _GuestDivider(),
+          _GuestTile(
+            icon: Icons.shield_outlined,
+            title: 'Kebijakan Privasi',
+            subtitle: 'Cara Booboo menjaga data member',
+            onTap: onPrivacy,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuestTile extends StatelessWidget {
+  const _GuestTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(28),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 21),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textSecondary.withValues(alpha: 0.7),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GuestDivider extends StatelessWidget {
+  const _GuestDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(
+      height: 1,
+      indent: 70,
+      endIndent: 16,
+      color: AppColors.border.withValues(alpha: 0.8),
+    );
+  }
 }
 
 class _HistoriesLoading extends StatelessWidget {
@@ -275,27 +691,23 @@ class _HistoriesLoading extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
       children: const [
-        SkeletonPulse(child: SkeletonBox(width: 230, height: 28, radius: 10)),
-        SizedBox(height: 8),
-        SkeletonPulse(child: SkeletonBox(width: 150, height: 14, radius: 8)),
-        SizedBox(height: 18),
         SkeletonPulse(
-          child: SkeletonBox(width: double.infinity, height: 52, radius: 16),
-        ),
-        SizedBox(height: 12),
-        SkeletonPulse(
-          child: SkeletonBox(width: double.infinity, height: 48, radius: 16),
-        ),
-        SizedBox(height: 12),
-        SkeletonPulse(
-          child: SkeletonBox(width: double.infinity, height: 54, radius: 16),
+          child: SkeletonBox(width: double.infinity, height: 190, radius: 30),
         ),
         SizedBox(height: 18),
-        SkeletonCard(imageSize: 60),
+        SkeletonPulse(
+          child: SkeletonBox(width: double.infinity, height: 56, radius: 20),
+        ),
         SizedBox(height: 12),
-        SkeletonCard(imageSize: 60),
+        SkeletonPulse(
+          child: SkeletonBox(width: double.infinity, height: 104, radius: 22),
+        ),
+        SizedBox(height: 18),
+        SkeletonCard(imageSize: 70),
         SizedBox(height: 12),
-        SkeletonCard(imageSize: 60),
+        SkeletonCard(imageSize: 70),
+        SizedBox(height: 12),
+        SkeletonCard(imageSize: 70),
       ],
     );
   }
@@ -324,10 +736,11 @@ class _RetryState extends StatelessWidget {
           children: [
             EmptyState(title: title, message: message, icon: icon),
             const SizedBox(height: 12),
-            FilledButton.icon(
+            PremiumActionButton(
+              label: 'Coba Lagi',
+              icon: Icons.refresh_rounded,
+              secondary: true,
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Coba lagi'),
             ),
           ],
         ),
@@ -355,56 +768,64 @@ class _HistoryFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: onPickDate,
-                icon: const Icon(Icons.date_range_outlined),
-                label: Text(_dateLabel),
-              ),
-            ),
-            const SizedBox(width: 10),
-            IconButton.filledTonal(
-              tooltip: 'Reset filter',
-              onPressed: onClear,
-              icon: const Icon(Icons.filter_alt_off_outlined),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        petOptionsAsync.when(
-          loading: () => const LinearProgressIndicator(minHeight: 2),
-          error: (error, stack) => const SizedBox.shrink(),
-          data: (pets) => DropdownButtonFormField<int?>(
-            initialValue: petId,
-            isExpanded: true,
-            decoration: const InputDecoration(
-              prefixIcon: Icon(Icons.pets_outlined),
-              hintText: 'Semua anabul',
-            ),
-            items: [
-              const DropdownMenuItem<int?>(
-                value: null,
-                child: Text('Semua anabul'),
-              ),
-              ...pets.map(
-                (pet) => DropdownMenuItem<int?>(
-                  value: pet.id,
-                  child: Text(
-                    pet.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onPickDate,
+                  icon: const Icon(Icons.date_range_outlined),
+                  label: Text(_dateLabel),
                 ),
               ),
+              const SizedBox(width: 10),
+              IconButton.filledTonal(
+                tooltip: 'Reset filter',
+                onPressed: onClear,
+                icon: const Icon(Icons.filter_alt_off_outlined),
+              ),
             ],
-            onChanged: onPetChanged,
           ),
-        ),
-      ],
+          const SizedBox(height: 10),
+          petOptionsAsync.when(
+            loading: () => const LinearProgressIndicator(minHeight: 2),
+            error: (error, stack) => const SizedBox.shrink(),
+            data: (pets) => DropdownButtonFormField<int?>(
+              initialValue: petId,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.pets_outlined),
+                hintText: 'Semua anabul',
+              ),
+              items: [
+                const DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text('Semua anabul'),
+                ),
+                ...pets.map(
+                  (pet) => DropdownMenuItem<int?>(
+                    value: pet.id,
+                    child: Text(
+                      pet.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              onChanged: onPetChanged,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -429,30 +850,38 @@ class _PaginationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left_rounded),
-            label: const Text('Prev'),
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onPrevious,
+              icon: const Icon(Icons.chevron_left_rounded),
+              label: const Text('Prev'),
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            '$page / $lastPage',
-            style: const TextStyle(fontWeight: FontWeight.w900),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              '$page / $lastPage',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
           ),
-        ),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right_rounded),
-            label: const Text('Next'),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: onNext,
+              icon: const Icon(Icons.chevron_right_rounded),
+              label: const Text('Next'),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
