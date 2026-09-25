@@ -14,6 +14,7 @@ import '../../features/pets/presentation/pet_detail_page.dart';
 import '../../features/profile/presentation/change_password_page.dart';
 import '../../features/profile/presentation/edit_profile_page.dart';
 import '../../features/profile/presentation/privacy_policy_page.dart';
+import '../../features/messages/presentation/messages_page.dart';
 import '../../features/shell/presentation/main_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -24,6 +25,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state, child) => MainShell(child: child),
         routes: [
           GoRoute(path: '/', builder: (context, state) => const HomePage()),
+          GoRoute(
+            path: '/messages',
+            builder: (context, state) => const MessagesPage(),
+          ),
           GoRoute(
             path: '/pets',
             builder: (context, state) => const HomePage(initialTab: 1),

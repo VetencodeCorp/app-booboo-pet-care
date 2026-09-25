@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -322,10 +323,10 @@ class _LandingPageState extends ConsumerState<_LandingPage>
                     ),
                   ),
                   Tooltip(
-                    message: 'Refresh Home',
+                    message: 'Pesan',
                     child: IconButton.filledTonal(
-                      onPressed: _refreshHome,
-                      icon: const Icon(Icons.refresh_rounded),
+                      onPressed: () => context.push('/messages'),
+                      icon: const Icon(Icons.mail_outline_rounded),
                       style: IconButton.styleFrom(
                         backgroundColor: AppColors.softPurple,
                         foregroundColor: AppColors.primary,
