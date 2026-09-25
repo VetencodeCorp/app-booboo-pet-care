@@ -538,7 +538,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
           badge: 'Promo',
           icon: Icons.local_offer_outlined,
           title: banner.name,
-          body: 'Lihat promo terbaru dari Booboo Pet Care.',
+          body: banner.description.isEmpty ? banner.name : banner.description,
           image: banner.image,
           color: AppColors.primary,
         ),
@@ -548,9 +548,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
           badge: 'Info',
           icon: Icons.event_outlined,
           title: event.name,
-          body: event.description.isEmpty
-              ? 'Informasi terbaru dari Booboo Pet Care.'
-              : event.description,
+          body: event.description.isEmpty ? event.name : event.description,
           image: event.image,
           color: AppColors.mint,
         ),

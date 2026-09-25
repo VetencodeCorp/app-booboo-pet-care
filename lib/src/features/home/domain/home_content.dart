@@ -73,12 +73,14 @@ class HomeBanner {
   const HomeBanner({
     required this.id,
     required this.name,
+    required this.description,
     required this.image,
     required this.position,
   });
 
   final int id;
   final String name;
+  final String description;
   final String image;
   final int position;
 
@@ -86,6 +88,7 @@ class HomeBanner {
     return HomeBanner(
       id: _intValue(json['id']),
       name: json['name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
       image: json['image']?.toString() ?? '',
       position: _intValue(json['position']),
     );
