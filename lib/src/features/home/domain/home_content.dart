@@ -35,6 +35,7 @@ class HomeContent {
           image: '',
           description:
               'Diagnosa, tindakan, dan catatan dokter tersimpan di aplikasi.',
+          category: 'info',
           dateStart: '',
           dateEnd: '',
         ),
@@ -74,6 +75,7 @@ class HomeBanner {
     required this.id,
     required this.name,
     required this.description,
+    required this.category,
     required this.image,
     required this.position,
   });
@@ -81,6 +83,7 @@ class HomeBanner {
   final int id;
   final String name;
   final String description;
+  final String category;
   final String image;
   final int position;
 
@@ -89,6 +92,7 @@ class HomeBanner {
       id: _intValue(json['id']),
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'promo',
       image: json['image']?.toString() ?? '',
       position: _intValue(json['position']),
     );
@@ -101,6 +105,7 @@ class HomeEvent {
     required this.name,
     required this.image,
     required this.description,
+    required this.category,
     required this.dateStart,
     required this.dateEnd,
   });
@@ -109,6 +114,7 @@ class HomeEvent {
   final String name;
   final String image;
   final String description;
+  final String category;
   final String dateStart;
   final String dateEnd;
 
@@ -118,6 +124,7 @@ class HomeEvent {
       name: json['name']?.toString() ?? '',
       image: json['image']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
+      category: json['category']?.toString() ?? 'event',
       dateStart: json['date_start']?.toString() ?? '',
       dateEnd: json['date_end']?.toString() ?? '',
     );

@@ -535,22 +535,23 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
     final items = <_PromoData>[
       ...widget.banners.map(
         (banner) => _PromoData(
-          badge: 'Promo',
           icon: Icons.local_offer_outlined,
           title: banner.name,
           body: banner.description.isEmpty ? banner.name : banner.description,
           image: banner.image,
-          color: AppColors.primary,
+          category: banner.category,
+          color: _categoryColor(banner.category),
         ),
       ),
       ...widget.events.map(
         (event) => _PromoData(
-          badge: 'Info',
           icon: Icons.event_outlined,
           title: event.name,
           body: event.description.isEmpty ? event.name : event.description,
           image: event.image,
-          color: AppColors.mint,
+          category: event.category,
+          dateRange: _formatDateRange(event.dateStart, event.dateEnd),
+          color: _categoryColor(event.category),
         ),
       ),
     ];
@@ -558,12 +559,12 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
     return items.isEmpty
         ? [
             const _PromoData(
-              badge: 'Info',
               icon: Icons.medical_information_outlined,
               title: 'Riwayat Perawatan',
               body:
                   'Diagnosa, tindakan, dan catatan dokter tersimpan di aplikasi.',
               image: '',
+              category: 'info',
               color: AppColors.mint,
             ),
           ]
@@ -597,142 +598,9 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
                   opacity: opacity,
                   child: Transform.scale(
                     scale: scale,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            item.color.withValues(alpha: 0.13),
-                            AppColors.surface,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: AppColors.border),
-                        boxShadow: [
-                          BoxShadow(
-                            color: item.color.withValues(alpha: 0.08),
-                            blurRadius: 22,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            right: 0,
-                            bottom: 0,
-                            child: TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0.92, end: 1),
-                              duration: const Duration(milliseconds: 650),
-                              curve: Curves.easeOutBack,
-                              builder: (context, value, child) =>
-                                  Transform.scale(scale: value, child: child),
-                              child: item.image.isEmpty
-                                  ? Container(
-                                      width: 76,
-                                      height: 76,
-                                      decoration: BoxDecoration(
-                                        color: item.color.withValues(
-                                          alpha: 0.1,
-                                        ),
-                                        borderRadius: BorderRadius.circular(26),
-                                      ),
-                                      child: Icon(
-                                        item.icon,
-                                        size: 38,
-                                        color: item.color.withValues(
-                                          alpha: 0.72,
-                                        ),
-                                      ),
-                                    )
-                                  : ClipRRect(
-                                      borderRadius: BorderRadius.circular(26),
-                                      child: CachedNetworkImage(
-                                        imageUrl: item.image,
-                                        width: 92,
-                                        height: 92,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            Container(
-                                              width: 92,
-                                              height: 92,
-                                              color: item.color.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                            ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                              width: 76,
-                                              height: 76,
-                                              color: item.color.withValues(
-                                                alpha: 0.1,
-                                              ),
-                                              child: Icon(
-                                                item.icon,
-                                                size: 38,
-                                                color: item.color.withValues(
-                                                  alpha: 0.72,
-                                                ),
-                                              ),
-                                            ),
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 260),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: item.color.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  item.badge,
-                                  style: TextStyle(
-                                    color: item.color,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                item.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              SizedBox(
-                                width: MediaQuery.sizeOf(context).width * 0.5,
-                                child: Text(
-                                  item.body,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: AppColors.textSecondary,
-                                        height: 1.35,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                    child: _PromoCard(
+                      item: item,
+                      onTap: () => _showDetails(context, item),
                     ),
                   ),
                 ),
@@ -760,24 +628,320 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
       ],
     );
   }
+
+  void _showDetails(BuildContext context, _PromoData item) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PromoDetailSheet(item: item),
+    );
+  }
 }
 
 class _PromoData {
   const _PromoData({
-    required this.badge,
     required this.icon,
     required this.title,
     required this.body,
     required this.image,
+    required this.category,
     required this.color,
+    this.dateRange = '',
   });
 
-  final String badge;
   final IconData icon;
   final String title;
   final String body;
   final String image;
+  final String category;
   final Color color;
+  final String dateRange;
+
+  String get categoryLabel {
+    switch (category.toLowerCase()) {
+      case 'promo':
+        return 'Promo';
+      case 'event':
+        return 'Event';
+      case 'info':
+        return 'Info';
+      default:
+        return category.isEmpty ? 'Info' : category;
+    }
+  }
+}
+
+class _PromoCard extends StatelessWidget {
+  const _PromoCard({required this.item, required this.onTap});
+
+  final _PromoData item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [item.color.withValues(alpha: 0.13), AppColors.surface],
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: item.color.withValues(alpha: 0.08),
+              blurRadius: 22,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(right: 0, bottom: 0, child: _PromoArtwork(item: item)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: item.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    item.categoryLabel,
+                    style: TextStyle(
+                      color: item.color,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  item.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  width: MediaQuery.sizeOf(context).width * 0.5,
+                  child: Text(
+                    _plainText(item.body),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Lihat selengkapnya',
+                  style: TextStyle(
+                    color: item.color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PromoArtwork extends StatelessWidget {
+  const _PromoArtwork({required this.item});
+
+  final _PromoData item;
+
+  @override
+  Widget build(BuildContext context) {
+    if (item.image.isEmpty) {
+      return Container(
+        width: 76,
+        height: 76,
+        decoration: BoxDecoration(
+          color: item.color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(26),
+        ),
+        child: Icon(
+          item.icon,
+          size: 38,
+          color: item.color.withValues(alpha: 0.72),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(26),
+      child: CachedNetworkImage(
+        imageUrl: item.image,
+        width: 92,
+        height: 92,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(
+          width: 92,
+          height: 92,
+          color: item.color.withValues(alpha: 0.1),
+        ),
+        errorWidget: (context, url, error) => Container(
+          width: 76,
+          height: 76,
+          color: item.color.withValues(alpha: 0.1),
+          child: Icon(
+            item.icon,
+            size: 38,
+            color: item.color.withValues(alpha: 0.72),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PromoDetailSheet extends StatelessWidget {
+  const _PromoDetailSheet({required this.item});
+
+  final _PromoData item;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        constraints: const BoxConstraints(maxHeight: 680),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (item.image.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: CachedNetworkImage(
+                    imageUrl: item.image,
+                    width: double.infinity,
+                    height: 190,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              if (item.image.isNotEmpty) const SizedBox(height: 18),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  item.categoryLabel,
+                  style: TextStyle(
+                    color: item.color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                item.title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (item.dateRange.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  item.dateRange,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              Text(
+                _plainText(item.body),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  height: 1.55,
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.check_rounded),
+                  label: const Text('Tutup'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Color _categoryColor(String category) {
+  switch (category.toLowerCase()) {
+    case 'promo':
+      return AppColors.primary;
+    case 'event':
+      return AppColors.amber;
+    case 'info':
+      return AppColors.mint;
+    default:
+      return AppColors.primary;
+  }
+}
+
+String _formatDateRange(String start, String end) {
+  if (start.isEmpty && end.isEmpty) return '';
+  if (start.isEmpty) return end;
+  if (end.isEmpty) return start;
+  return '$start - $end';
+}
+
+String _plainText(String value) {
+  return value.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 }
 
 class _ServiceGrid extends StatelessWidget {
