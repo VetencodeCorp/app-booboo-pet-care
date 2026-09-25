@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../auth/application/auth_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../data/messages_repository.dart';
@@ -32,13 +34,32 @@ class MessagesPage extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            children: const [
+            children: [
               EmptyState(
-                title: 'Pesan belum tersedia',
-                message:
-                    'Koneksi sedang bermasalah. Tarik layar untuk mencoba lagi.',
-                icon: Icons.mail_outline_rounded,
+                title: error is MessagesAuthException
+                    ? 'Sesi login berakhir'
+                    : 'Pesan gagal dimuat',
+                message: error is MessagesAuthException
+                    ? 'Token login sudah tidak valid. Login ulang untuk membuka pesan.'
+                    : error is MessagesFetchException
+                    ? error.message
+                    : 'Koneksi atau server sedang bermasalah. Tarik layar untuk mencoba lagi.',
+                icon: error is MessagesAuthException
+                    ? Icons.lock_outline_rounded
+                    : Icons.mail_outline_rounded,
               ),
+              if (error is MessagesAuthException)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: FilledButton.icon(
+                    onPressed: () async {
+                      await ref.read(authControllerProvider.notifier).logout();
+                      if (context.mounted) context.go('/login');
+                    },
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text('Login ulang'),
+                  ),
+                ),
             ],
           ),
           data: (items) => items.isEmpty
