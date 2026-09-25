@@ -38,6 +38,7 @@ class HomeContent {
           category: 'info',
           dateStart: '',
           dateEnd: '',
+          icon: 'medical_information',
         ),
       ],
       services: [
@@ -78,6 +79,7 @@ class HomeBanner {
     required this.category,
     required this.image,
     required this.position,
+    required this.icon,
   });
 
   final int id;
@@ -86,6 +88,7 @@ class HomeBanner {
   final String category;
   final String image;
   final int position;
+  final String icon;
 
   factory HomeBanner.fromJson(Map<String, dynamic> json) {
     return HomeBanner(
@@ -95,6 +98,7 @@ class HomeBanner {
       category: json['category']?.toString() ?? 'promo',
       image: json['image']?.toString() ?? '',
       position: _intValue(json['position']),
+      icon: json['icon']?.toString() ?? 'local_offer',
     );
   }
 }
@@ -108,6 +112,7 @@ class HomeEvent {
     required this.category,
     required this.dateStart,
     required this.dateEnd,
+    required this.icon,
   });
 
   final int id;
@@ -117,6 +122,7 @@ class HomeEvent {
   final String category;
   final String dateStart;
   final String dateEnd;
+  final String icon;
 
   factory HomeEvent.fromJson(Map<String, dynamic> json) {
     return HomeEvent(
@@ -127,6 +133,7 @@ class HomeEvent {
       category: json['category']?.toString() ?? 'event',
       dateStart: json['date_start']?.toString() ?? '',
       dateEnd: json['date_end']?.toString() ?? '',
+      icon: json['icon']?.toString() ?? 'event',
     );
   }
 }

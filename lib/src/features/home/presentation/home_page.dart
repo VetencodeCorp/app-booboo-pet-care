@@ -535,7 +535,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
     final items = <_PromoData>[
       ...widget.banners.map(
         (banner) => _PromoData(
-          icon: Icons.local_offer_outlined,
+          icon: _homeIconData(banner.icon, banner.category),
           title: banner.name,
           body: banner.description.isEmpty ? banner.name : banner.description,
           image: banner.image,
@@ -545,7 +545,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
       ),
       ...widget.events.map(
         (event) => _PromoData(
-          icon: Icons.event_outlined,
+          icon: _homeIconData(event.icon, event.category),
           title: event.name,
           body: event.description.isEmpty ? event.name : event.description,
           image: event.image,
@@ -579,7 +579,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
     return Column(
       children: [
         SizedBox(
-          height: 154,
+          height: 176,
           child: PageView.builder(
             controller: _controller,
             itemCount: items.length,
@@ -701,46 +701,44 @@ class _PromoCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Stack(
-          clipBehavior: Clip.none,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Positioned(right: 0, bottom: 0, child: _PromoArtwork(item: item)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: item.color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    item.categoryLabel,
-                    style: TextStyle(
-                      color: item.color,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: item.color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      item.categoryLabel,
+                      style: TextStyle(
+                        color: item.color,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
+                  const SizedBox(height: 10),
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                SizedBox(
-                  width: MediaQuery.sizeOf(context).width * 0.5,
-                  child: Text(
+                  const SizedBox(height: 6),
+                  Text(
                     _plainText(item.body),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -749,17 +747,36 @@ class _PromoCard extends StatelessWidget {
                       height: 1.35,
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Lihat selengkapnya',
-                  style: TextStyle(
-                    color: item.color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
+                  const SizedBox(height: 8),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'Lihat selengkapnya',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: item.color,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 14,
+                        color: item.color,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 104,
+              child: Center(child: _PromoArtwork(item: item)),
             ),
           ],
         ),
@@ -775,44 +792,32 @@ class _PromoArtwork extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (item.image.isEmpty) {
-      return Container(
-        width: 76,
-        height: 76,
-        decoration: BoxDecoration(
-          color: item.color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(26),
-        ),
-        child: Icon(
-          item.icon,
-          size: 38,
-          color: item.color.withValues(alpha: 0.72),
-        ),
-      );
-    }
+    const size = 100.0;
+    final fallback = Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: item.color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Icon(
+        item.icon,
+        size: 42,
+        color: item.color.withValues(alpha: 0.72),
+      ),
+    );
+
+    if (item.image.isEmpty) return fallback;
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(22),
       child: CachedNetworkImage(
         imageUrl: item.image,
-        width: 92,
-        height: 92,
+        width: size,
+        height: size,
         fit: BoxFit.cover,
-        placeholder: (context, url) => Container(
-          width: 92,
-          height: 92,
-          color: item.color.withValues(alpha: 0.1),
-        ),
-        errorWidget: (context, url, error) => Container(
-          width: 76,
-          height: 76,
-          color: item.color.withValues(alpha: 0.1),
-          child: Icon(
-            item.icon,
-            size: 38,
-            color: item.color.withValues(alpha: 0.72),
-          ),
-        ),
+        placeholder: (context, url) => fallback,
+        errorWidget: (context, url, error) => fallback,
       ),
     );
   }
@@ -849,13 +854,17 @@ class _PromoDetailSheet extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               if (item.image.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: CachedNetworkImage(
-                    imageUrl: item.image,
-                    width: double.infinity,
-                    height: 190,
-                    fit: BoxFit.cover,
+                AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CachedNetworkImage(
+                      imageUrl: item.image,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorWidget: (context, url, error) =>
+                          Center(child: _PromoArtwork(item: item)),
+                    ),
                   ),
                 ),
               if (item.image.isNotEmpty) const SizedBox(height: 18),
@@ -942,6 +951,34 @@ String _formatDateRange(String start, String end) {
 
 String _plainText(String value) {
   return value.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+}
+
+IconData _homeIconData(String value, String category) {
+  switch (value) {
+    case 'medical_information':
+      return Icons.medical_information_outlined;
+    case 'event':
+      return Icons.event_outlined;
+    case 'content_cut':
+      return Icons.content_cut_rounded;
+    case 'night_shelter':
+      return Icons.night_shelter_outlined;
+    case 'shopping_bag':
+      return Icons.shopping_bag_outlined;
+    case 'pets':
+      return Icons.pets_outlined;
+    case 'local_offer':
+      return Icons.local_offer_outlined;
+    default:
+      switch (category.toLowerCase()) {
+        case 'event':
+          return Icons.event_outlined;
+        case 'info':
+          return Icons.medical_information_outlined;
+        default:
+          return Icons.local_offer_outlined;
+      }
+  }
 }
 
 class _ServiceGrid extends StatelessWidget {
