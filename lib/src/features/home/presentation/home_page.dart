@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/whatsapp_launcher.dart';
@@ -539,6 +540,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
           title: banner.name,
           body: banner.description.isEmpty ? banner.name : banner.description,
           image: banner.image,
+          link: banner.link,
           category: banner.category,
           color: _categoryColor(banner.category),
         ),
@@ -549,6 +551,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
           title: event.name,
           body: event.description.isEmpty ? event.name : event.description,
           image: event.image,
+          link: event.link,
           category: event.category,
           dateRange: _formatDateRange(event.dateStart, event.dateEnd),
           color: _categoryColor(event.category),
@@ -564,6 +567,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
               body:
                   'Diagnosa, tindakan, dan catatan dokter tersimpan di aplikasi.',
               image: '',
+              link: '',
               category: 'info',
               color: AppColors.mint,
             ),
@@ -579,7 +583,7 @@ class _PromoInfoSliderState extends State<_PromoInfoSlider> {
     return Column(
       children: [
         SizedBox(
-          height: 176,
+          height: 194,
           child: PageView.builder(
             controller: _controller,
             itemCount: items.length,
@@ -647,6 +651,7 @@ class _PromoData {
     required this.image,
     required this.category,
     required this.color,
+    required this.link,
     this.dateRange = '',
   });
 
@@ -656,6 +661,7 @@ class _PromoData {
   final String image;
   final String category;
   final Color color;
+  final String link;
   final String dateRange;
 
   String get categoryLabel {
@@ -747,29 +753,31 @@ class _PromoCard extends StatelessWidget {
                       height: 1.35,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  const Spacer(),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Lihat selengkapnya',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: item.color,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
+                  if (item.link.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Lihat selengkapnya',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: item.color,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 14,
-                        color: item.color,
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: item.color,
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -853,21 +861,25 @@ class _PromoDetailSheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              if (item.image.isNotEmpty)
-                AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: CachedNetworkImage(
-                      imageUrl: item.image,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) =>
-                          Center(child: _PromoArtwork(item: item)),
-                    ),
-                  ),
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: item.image.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: item.image,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) =>
+                              Center(child: _PromoArtwork(item: item)),
+                        )
+                      : ColoredBox(
+                          color: item.color.withValues(alpha: 0.08),
+                          child: Center(child: _PromoArtwork(item: item)),
+                        ),
                 ),
-              if (item.image.isNotEmpty) const SizedBox(height: 18),
+              ),
+              const SizedBox(height: 18),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -912,6 +924,17 @@ class _PromoDetailSheet extends StatelessWidget {
                   height: 1.55,
                 ),
               ),
+              if (item.link.isNotEmpty) ...[
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => _openLink(context),
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: const Text('Buka informasi'),
+                  ),
+                ),
+              ],
               const SizedBox(height: 22),
               SizedBox(
                 width: double.infinity,
@@ -926,6 +949,23 @@ class _PromoDetailSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openLink(BuildContext context) async {
+    final uri = Uri.tryParse(item.link);
+    if (uri == null || !{'http', 'https'}.contains(uri.scheme)) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Link tidak valid')));
+      return;
+    }
+
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Link tidak bisa dibuka')));
+    }
   }
 }
 
