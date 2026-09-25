@@ -26,4 +26,8 @@ class MessagesRepository {
         .map(AppMessage.fromJson)
         .toList();
   }
+
+  Future<void> markRead(int id) async {
+    await _client.dio.post('/api/messages/$id/read');
+  }
 }

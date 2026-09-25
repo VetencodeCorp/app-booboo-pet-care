@@ -61,7 +61,7 @@ class MessagesPage extends ConsumerWidget {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) => _MessageTile(
                     message: items[index],
-                    onTap: () => _showMessage(context, items[index]),
+                    onTap: () => _showMessage(context, ref, items[index]),
                   ),
                 ),
         ),
@@ -69,7 +69,15 @@ class MessagesPage extends ConsumerWidget {
     );
   }
 
-  void _showMessage(BuildContext context, AppMessage message) {
+  void _showMessage(BuildContext context, WidgetRef ref, AppMessage message) {
+    if (!message.isRead) {
+      ref
+          .read(messagesRepositoryProvider)
+          .markRead(message.id)
+          .then((_) => ref.invalidate(messagesProvider))
+          .catchError((_) {});
+    }
+
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
