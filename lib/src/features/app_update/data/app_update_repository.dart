@@ -37,6 +37,9 @@ class AppUpdateRepository {
       final belowMinimumBuild = currentBuild < minimumBuild;
       final belowMinimumVersion =
           _compareVersions(packageInfo.version, minimumVersion) < 0;
+      final belowLatestBuild = currentBuild < latestBuild;
+      final belowLatestVersion =
+          _compareVersions(packageInfo.version, latestVersion) < 0;
 
       return AppUpdateStatus(
         currentBuild: currentBuild,
@@ -45,7 +48,10 @@ class AppUpdateRepository {
         latestBuild: latestBuild,
         minimumVersion: minimumVersion,
         latestVersion: latestVersion,
-        forceUpdate: forceUpdate || belowMinimumBuild || belowMinimumVersion,
+        forceUpdate:
+            belowMinimumBuild ||
+            belowMinimumVersion ||
+            (forceUpdate && (belowLatestBuild || belowLatestVersion)),
         playStoreUrl: playStoreUrl,
       );
     } catch (_) {
