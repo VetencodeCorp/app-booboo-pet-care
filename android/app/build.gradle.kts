@@ -6,6 +6,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 val keyProperties = Properties().apply {
     val keyPropertiesFile = rootProject.file("key.properties")
     if (keyPropertiesFile.exists()) {
@@ -21,6 +25,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -62,4 +67,5 @@ flutter {
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
