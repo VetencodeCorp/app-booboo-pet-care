@@ -282,6 +282,7 @@ class _LandingPageState extends ConsumerState<_LandingPage>
     final services = content.services.isEmpty
         ? fallback.services
         : content.services;
+    final heroBanner = content.banners.isEmpty ? null : content.banners.first;
 
     return SafeArea(
       child: RefreshIndicator(
@@ -351,90 +352,7 @@ class _LandingPageState extends ConsumerState<_LandingPage>
             const SizedBox(height: 26),
             AnimatedEntry(
               delay: const Duration(milliseconds: 80),
-              child: Container(
-                height: 226,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFFFFF), AppColors.lavender],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(32),
-                  border: Border.all(color: AppColors.border),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      blurRadius: 32,
-                      offset: const Offset(0, 16),
-                    ),
-                  ],
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: 4,
-                      bottom: 4,
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.94, end: 1),
-                        duration: const Duration(milliseconds: 900),
-                        curve: Curves.easeOutBack,
-                        builder: (context, value, child) =>
-                            Transform.scale(scale: value, child: child),
-                        child: Icon(
-                          Icons.pets_rounded,
-                          size: 122,
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                        ),
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.softPurple.withValues(alpha: 0.88),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Text(
-                            greeting,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-                        Text(
-                          'Pantau riwayat perawatan anabul.',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                color: AppColors.primaryDark,
-                                fontWeight: FontWeight.w900,
-                                height: 1.14,
-                              ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Semua kunjungan, diagnosa, dan catatan klinik masuk dalam satu aplikasi.',
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            height: 1.45,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+              child: _HeroHighlightCard(greeting: greeting, banner: heroBanner),
             ),
             const SizedBox(height: 22),
             AnimatedEntry(
@@ -486,6 +404,246 @@ class _LandingPageState extends ConsumerState<_LandingPage>
       );
     }
   }
+}
+
+class _HeroHighlightCard extends StatelessWidget {
+  const _HeroHighlightCard({required this.greeting, required this.banner});
+
+  final String greeting;
+  final HomeBanner? banner;
+
+  @override
+  Widget build(BuildContext context) {
+    if (banner == null) {
+      return _DefaultHeroCard(greeting: greeting);
+    }
+
+    final item = _PromoData(
+      icon: _homeIconData(banner!.icon, banner!.category),
+      title: banner!.name,
+      body: banner!.description.isEmpty ? banner!.name : banner!.description,
+      image: banner!.image,
+      link: banner!.link,
+      category: banner!.category,
+      color: _categoryColor(banner!.category),
+    );
+
+    return InkWell(
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _PromoDetailSheet(item: item),
+      ),
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        height: 226,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: item.color,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: item.color.withValues(alpha: 0.24),
+              blurRadius: 28,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (item.image.isNotEmpty)
+              CachedNetworkImage(
+                imageUrl: item.image,
+                fit: BoxFit.cover,
+                color: Colors.black.withValues(alpha: 0.28),
+                colorBlendMode: BlendMode.darken,
+                errorWidget: (context, url, error) =>
+                    _heroFallbackArtwork(item),
+              )
+            else
+              _heroFallbackArtwork(item),
+            Positioned(
+              left: 20,
+              right: 20,
+              top: 18,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                      child: Text(
+                        '${item.categoryLabel}  •  Highlight',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 18,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    greeting,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.86),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 23,
+                      height: 1.08,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    _plainText(item.body),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DefaultHeroCard extends StatelessWidget {
+  const _DefaultHeroCard({required this.greeting});
+
+  final String greeting;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 226,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFFFFF), AppColors.lavender],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: 4,
+            bottom: 4,
+            child: Icon(
+              Icons.pets_rounded,
+              size: 122,
+              color: AppColors.primary.withValues(alpha: 0.1),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.softPurple.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  greeting,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'Pantau riwayat perawatan anabul.',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primaryDark,
+                  fontWeight: FontWeight.w900,
+                  height: 1.14,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Semua kunjungan, diagnosa, dan catatan klinik masuk dalam satu aplikasi.',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: AppColors.textSecondary, height: 1.45),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+Widget _heroFallbackArtwork(_PromoData item) {
+  return DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [item.color, item.color.withValues(alpha: 0.72)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+    child: Align(
+      alignment: Alignment.centerRight,
+      child: Icon(
+        item.icon,
+        size: 150,
+        color: Colors.white.withValues(alpha: 0.18),
+      ),
+    ),
+  );
 }
 
 class _PromoInfoSlider extends StatefulWidget {
