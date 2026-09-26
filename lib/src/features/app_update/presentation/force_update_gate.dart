@@ -33,73 +33,78 @@ class _ForceUpdateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(32),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    blurRadius: 32,
-                    offset: const Offset(0, 16),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircleAvatar(
-                    radius: 42,
-                    backgroundColor: AppColors.softPurple,
-                    child: Icon(
-                      Icons.system_update_rounded,
-                      color: AppColors.primary,
-                      size: 38,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      blurRadius: 32,
+                      offset: const Offset(0, 16),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Update Diperlukan',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppColors.primaryDark,
-                      fontWeight: FontWeight.w900,
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircleAvatar(
+                      radius: 42,
+                      backgroundColor: AppColors.softPurple,
+                      child: Icon(
+                        Icons.system_update_rounded,
+                        color: AppColors.primary,
+                        size: 38,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Versi aplikasi ini sudah tidak didukung. Update ke versi terbaru untuk lanjut memakai Booboo Pet Care.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.45,
+                    const SizedBox(height: 20),
+                    Text(
+                      'Update Diperlukan',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.w900,
+                          ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Versi sekarang: ${status.currentVersion}+${status.currentBuild}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 10),
+                    Text(
+                      'Versi aplikasi ini sudah tidak didukung. Update ke versi terbaru untuk lanjut memakai Booboo Pet Care.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.45,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  PremiumActionButton(
-                    label: 'Update Sekarang',
-                    icon: Icons.open_in_new_rounded,
-                    onPressed: () => _openStore(context),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      'Versi sekarang: ${status.currentVersion}+${status.currentBuild}\n'
+                      'Versi minimum: ${status.minimumVersion}+${status.minimumBuild}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    PremiumActionButton(
+                      label: 'Update Sekarang',
+                      icon: Icons.open_in_new_rounded,
+                      onPressed: () => _openStore(context),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
