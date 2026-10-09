@@ -26,11 +26,15 @@ class AuthController extends AsyncNotifier<Member?> {
     return ref.read(authRepositoryProvider).forgotPassword(phone);
   }
 
-  Future<VerifyOtpResult> verifyOtp(String token, String code) async {
+  Future<VerifyOtpResult> verifyOtp(
+    String token,
+    String code, {
+    required String purpose,
+  }) async {
     state = const AsyncLoading();
     final result = await ref
         .read(authRepositoryProvider)
-        .verifyOtp(token, code);
+        .verifyOtp(token, code, purpose: purpose);
     state = AsyncData(result.member);
     _resetPetCaches();
     return result;

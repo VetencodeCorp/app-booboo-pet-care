@@ -47,7 +47,11 @@ class _OtpPageState extends ConsumerState<OtpPage> {
     try {
       final result = await ref
           .read(authControllerProvider.notifier)
-          .verifyOtp(widget.args.result.otpToken, _otp.text.trim());
+          .verifyOtp(
+            widget.args.result.otpToken,
+            _otp.text.trim(),
+            purpose: _purpose,
+          );
       if (!mounted) return;
 
       if (widget.args.flow == OtpFlow.forgot) {
@@ -133,11 +137,12 @@ class _OtpPageState extends ConsumerState<OtpPage> {
   Widget build(BuildContext context) {
     final debugOtp = widget.args.result.debugOtp;
     final memberName = widget.args.result.memberName.trim();
+    final purposeLabel = _purposeLabel;
     return AuthShell(
-      title: 'Verifikasi OTP',
+      title: 'Verifikasi OTP $purposeLabel',
       subtitle: memberName.isEmpty
-          ? 'Masukkan kode OTP yang dikirim ke ${widget.args.result.phone}.'
-          : 'Masukkan kode OTP untuk akun $memberName yang dikirim ke ${widget.args.result.phone}.',
+          ? 'Masukkan kode OTP $purposeLabel yang dikirim ke ${widget.args.result.phone}.'
+          : 'Masukkan kode OTP $purposeLabel untuk akun $memberName yang dikirim ke ${widget.args.result.phone}.',
       showLogo: false,
       children: [
         if (debugOtp != null) ...[
@@ -193,9 +198,9 @@ class _OtpPageState extends ConsumerState<OtpPage> {
           controller: _otp,
           keyboardType: TextInputType.number,
           maxLength: 6,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(Icons.password),
-            labelText: 'Kode OTP',
+          decoration: InputDecoration(
+            prefixIcon: const Icon(Icons.password),
+            labelText: 'Kode OTP $purposeLabel',
           ),
         ),
         const SizedBox(height: 18),
@@ -207,5 +212,28 @@ class _OtpPageState extends ConsumerState<OtpPage> {
         ),
       ],
     );
+  }
+
+  String get _purpose {
+    final purpose = widget.args.result.purpose.trim();
+    if (purpose.isNotEmpty) return purpose;
+
+    return switch (widget.args.flow) {
+      OtpFlow.forgot => 'forgot_password',
+      OtpFlow.activation => 'activation',
+      OtpFlow.login => 'login',
+    };
+  }
+
+  String get _purposeLabel {
+    final label = widget.args.result.purposeLabel.trim();
+    if (label.isNotEmpty) return label;
+
+    return switch (_purpose) {
+      'forgot_password' => 'reset password',
+      'activation' => 'aktivasi member',
+      'login' => 'login',
+      _ => 'verifikasi',
+    };
   }
 }

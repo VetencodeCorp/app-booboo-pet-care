@@ -14,6 +14,8 @@ class LoginOtpResult {
     required this.phone,
     required this.expiredAt,
     required this.memberName,
+    required this.purpose,
+    required this.purposeLabel,
     this.debugOtp,
   });
 
@@ -21,16 +23,30 @@ class LoginOtpResult {
   final String phone;
   final String expiredAt;
   final String memberName;
+  final String purpose;
+  final String purposeLabel;
   final String? debugOtp;
 
   factory LoginOtpResult.fromJson(Map<String, dynamic> json) {
+    final purpose = json['purpose']?.toString() ?? 'login';
     return LoginOtpResult(
       otpToken: json['otp_token']?.toString() ?? '',
       phone: json['phone']?.toString() ?? '',
       expiredAt: json['expired_at']?.toString() ?? '',
       memberName: json['member_name']?.toString() ?? '',
+      purpose: purpose,
+      purposeLabel: json['purpose_label']?.toString() ?? _purposeLabel(purpose),
       debugOtp: json['debug_otp']?.toString(),
     );
+  }
+
+  static String _purposeLabel(String purpose) {
+    return switch (purpose) {
+      'forgot_password' => 'reset password',
+      'activation' => 'aktivasi member',
+      'login' => 'login',
+      _ => 'verifikasi',
+    };
   }
 }
 
@@ -79,10 +95,14 @@ class AuthRepository {
     );
   }
 
-  Future<VerifyOtpResult> verifyOtp(String otpToken, String otpCode) async {
+  Future<VerifyOtpResult> verifyOtp(
+    String otpToken,
+    String otpCode, {
+    required String purpose,
+  }) async {
     final response = await _client.dio.post(
       '/api/auth/verify-otp',
-      data: {'otp_token': otpToken, 'otp_code': otpCode},
+      data: {'otp_token': otpToken, 'otp_code': otpCode, 'purpose': purpose},
     );
     final data = response.data['data'] as Map<String, dynamic>;
     await _client.saveToken(data['access_token'].toString());
