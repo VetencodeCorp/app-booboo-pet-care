@@ -224,6 +224,18 @@ class PetsRepository {
     return Pet.fromJson(response.data['data'] as Map<String, dynamic>);
   }
 
+  Future<Pet> createPet({
+    required String name,
+    required int jenisId,
+    required String genderCode,
+  }) async {
+    final response = await _client.dio.post(
+      '/api/pets',
+      data: {'name': name, 'jenis_id': jenisId, 'jk': genderCode},
+    );
+    return Pet.fromJson(response.data['data'] as Map<String, dynamic>);
+  }
+
   Future<Pet> uploadPhoto({required int id, required XFile file}) async {
     final response = await _client.dio.post(
       '/api/pets/$id/photo',

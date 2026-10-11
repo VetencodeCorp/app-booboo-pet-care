@@ -91,11 +91,22 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                     onChanged: _onSearchChanged,
                   ),
                 ),
+                const SizedBox(height: 12),
+                AnimatedEntry(
+                  delay: const Duration(milliseconds: 150),
+                  child: PremiumActionButton(
+                    label: 'Tambah Anabul',
+                    icon: Icons.add_rounded,
+                    secondary: true,
+                    onPressed: () => context.push('/pets/new'),
+                  ),
+                ),
                 const SizedBox(height: 18),
                 if (pets.isEmpty)
                   const EmptyState(
                     title: 'Belum ada data anabul',
-                    message: 'Hubungi admin jika kamu sudah pernah berkunjung.',
+                    message:
+                        'Tambahkan anabul pertama kamu, atau hubungi admin jika kamu sudah pernah berkunjung.',
                   )
                 else
                   ...pets.asMap().entries.map((entry) {

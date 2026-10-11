@@ -8,6 +8,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/otp_page.dart';
 import '../../features/auth/presentation/setup_password_page.dart';
 import '../../features/home/presentation/home_page.dart';
+import '../../features/pets/presentation/add_pet_page.dart';
 import '../../features/pets/presentation/edit_pet_page.dart';
 import '../../features/pets/presentation/history_detail_page.dart';
 import '../../features/pets/presentation/pet_detail_page.dart';
@@ -75,6 +76,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 const SetupPasswordPageArgs(),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/pets/new',
+        pageBuilder: (context, state) =>
+            _slidePage(state: state, child: const AddPetPage()),
       ),
       GoRoute(
         path: '/pets/:id',
