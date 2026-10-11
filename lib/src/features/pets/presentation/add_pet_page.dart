@@ -161,7 +161,7 @@ class _AddPetPageState extends ConsumerState<AddPetPage> {
       ref.invalidate(pagedPetsProvider);
       ref.invalidate(petOptionsProvider);
       if (!mounted) return;
-      context.go('/pets/${pet.id}');
+      context.pushReplacement('/pets/${pet.id}');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Anabul berhasil ditambahkan')),
       );
